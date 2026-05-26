@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harps VoicePay | Receipt</title>
+
+<!-- PWA Tags - Added -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00D084">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="logo.png">
+
+<style>
+body{background:#0a0a0a;color:white;font-family:-apple-system,sans-serif;padding:30px 20px;text-align:center}
+.receipt{background:rgba(255,255,255,0.05);padding:30px;border-radius:20px;margin-bottom:20px}
+h1{color:#00D084;font-size:48px;margin:20px 0}
+.btn{width:100%;padding:15px;border:none;border-radius:12px;background:#00D084;color:white;font-weight:600;margin-top:10px;cursor:pointer}
+.btn-secondary{background:rgba(255,255,255,0.1)}
+</style>
+</head>
+<body>
+<div class="receipt">
+  <h3>Payment Successful</h3>
+  <h1 id="amount">₦0</h1>
+  <p>Sent to <strong id="recipient">-</strong></p>
+  <p id="time"></p>
+  <p id="voiceText" style="font-style:italic;margin-top:20px"></p>
+</div>
+
+<button class="btn" onclick="speakReceipt()">🔊 Play Voice Receipt</button>
+<button class="btn btn-secondary" onclick="window.location.href='/index.html'">New Payment</button>
+<button class="btn btn-secondary" onclick="logout()">Logout</button>
+
+<script>
+const BACKEND_URL = 'YOUR_BACKEND_URL';
+const receipt=JSON.parse(localStorage.getItem('receipt'));
+if(!receipt) window.location.href='/index.html';
+
+document.getElementById('amount').innerText='₦'+receipt.amount;
+document.getElementById('recipient').innerText=receipt.recipient;
+document.getElementById('time').innerText=new Date(receipt.date).toLocaleString();
+
+// Generate voice receipt text
+fetch(BACKEND_URL+'/generate-receipt',{
+  method:'POST',headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({
+    amount:receipt.amount,
+    recipient:receipt.recipient,
+    language:'en'
+  })
+}).then(r=>r.json()).then(d=>{
+  document.getElementById('voiceText').innerText='"'+d.voice_text+'"';
+});
+
+function speakReceipt(){
+  const text=document.getElementById('voiceText').innerText.replace(/"/g,'');
+  speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+}
+
+function logout(){
+  localStorage.clear();
+  window.location.href='/login.html';
+}
+</script>
+
+<!-- Service Worker Registration - Added -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js');
+  });
+}
+</script>
+</body>
+</html>

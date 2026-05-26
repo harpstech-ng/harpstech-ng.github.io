@@ -1,0 +1,22 @@
+{
+  "name": "Harps VoicePay",
+  "short_name": "VoicePay",
+  "description": "Speak-to-Pay app by Harps Tech Pay Team",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#00D084",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
