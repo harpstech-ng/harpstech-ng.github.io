@@ -14,10 +14,9 @@ app.use(express.json());
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-// Initialize Firebase Admin
-// You'll paste your service account JSON into Render as FIREBASE_SERVICE_KEY
+// Initialize Firebase Admin - no key needed on Render
 admin.initializeApp({
-  credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_KEY))
+  projectId: "harps-tech-95856"
 });
 const db = admin.firestore();
 
