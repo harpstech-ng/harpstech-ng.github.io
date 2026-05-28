@@ -31,7 +31,10 @@ self.addEventListener('activate', event => {
 
 // Fetch - serve from cache, fallback to network
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  
+  // Skip caching for API calls and external requests
+  if (event.request.method !== 'GET' || url.origin !== location.origin) return;
   
   event.respondWith(
     caches.match(event.request)
