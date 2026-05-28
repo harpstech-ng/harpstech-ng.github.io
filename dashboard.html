@@ -26,6 +26,7 @@ h1{color:#00D084;font-size:48px;margin:20px 0}
   <h1 id="amount">₦0</h1>
   <p>Sent to <strong id="recipient">-</strong></p>
   <p id="time"></p>
+  <p style="font-size:12px;color:#666">Ref: <span id="ref"></span></p>
   <p id="voiceText" style="font-style:italic;margin-top:20px"></p>
 </div>
 
@@ -34,13 +35,14 @@ h1{color:#00D084;font-size:48px;margin:20px 0}
 <button class="btn btn-secondary" onclick="logout()">Logout</button>
 
 <script>
-const BACKEND_URL = 'https://harps-voicepay.onrender.com';
+const BACKEND_URL = 'https://your-app-name.onrender.com'; // <-- change this to your Render URL
 const receipt=JSON.parse(localStorage.getItem('receipt'));
 if(!receipt) window.location.href='/index.html';
 
-document.getElementById('amount').innerText='₦'+receipt.amount;
+document.getElementById('amount').innerText='₦'+receipt.amount.toLocaleString();
 document.getElementById('recipient').innerText=receipt.recipient;
 document.getElementById('time').innerText=new Date(receipt.date).toLocaleString();
+document.getElementById('ref').innerText = receipt.reference || receipt.txnId || '-';
 
 // Generate voice receipt text
 fetch(BACKEND_URL+'/generate-receipt',{
@@ -51,12 +53,19 @@ fetch(BACKEND_URL+'/generate-receipt',{
     language:'en'
   })
 }).then(r=>r.json()).then(d=>{
-  document.getElementById('voiceText').innerText='"'+d.voice_text+'"';
+  const text = d.voice_text || `Sent ${receipt.amount} naira to ${receipt.recipient}`;
+  document.getElementById('voiceText').innerText='"'+text+'"';
+}).catch(()=>{
+  document.getElementById('voiceText').innerText='"Payment completed successfully"';
 });
 
 function speakReceipt(){
   const text=document.getElementById('voiceText').innerText.replace(/"/g,'');
-  speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+  if('speechSynthesis' in window){
+    speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+  } else {
+    alert('Voice not supported on this device');
+  }
 }
 
 function logout(){
