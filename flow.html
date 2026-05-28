@@ -237,8 +237,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Backend URL
-const BACKEND_URL = 'https://harps-voicepay.onrender.com';
+// Backend URL - change this to your Render URL
+const BACKEND_URL = 'https://your-app-name.onrender.com';
 
 // Get intent from previous page
 const intent = JSON.parse(localStorage.getItem('intent'));
@@ -247,6 +247,7 @@ if(!intent) window.location.href='/index.html';
 // Auth check
 onAuthStateChanged(auth, (user) => {
   if (!user) window.location.href = '/login.html';
+  else window.currentUser = user;
 });
 
 // Populate data
@@ -259,7 +260,7 @@ if(intent.requires_extra_verification){
   document.getElementById('warning').style.display='block';
 }
 
-async function pay(){
+window.pay = async function pay(){
   const pin = document.getElementById('pin').value;
   const btn = document.getElementById('payBtn');
   const btnText = document.getElementById('btnText');
@@ -276,30 +277,41 @@ async function pay(){
   loader.style.display = 'block';
 
   try{
-    // TODO: Replace with real backend call when ready
-    // const res = await fetch(BACKEND_URL + '/pay', {
-    //   method:'POST',
-    //   headers:{'Content-Type':'application/json'},
-    //   body:JSON.stringify({intent, pin, uid:auth.currentUser.uid})
-    // });
-    // const data = await res.json();
+    // Call backend to create Opay payment link
+    const res = await fetch(BACKEND_URL + '/create-opay-link', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        amount: intent.amount,
+        recipient: intent.recipient,
+        narration: `VoicePay ${intent.intent} to ${intent.recipient}`,
+        userId: window.currentUser.uid
+      })
+    });
 
-    // For demo: simulate success
-    await new Promise(r => setTimeout(r, 1500));
-    
+    const data = await res.json();
+
+    if(!data.success){
+      throw new Error(data.error || 'Failed to create payment link');
+    }
+
+    // Save receipt for success page
     const receipt = {
-      amount:intent.amount,
-      recipient:intent.recipient,
-      intent:intent.intent,
-      date:Date.now(),
-      txnId:'TXN' + Math.floor(Math.random()*1000000)
+      amount: intent.amount,
+      recipient: intent.recipient,
+      intent: intent.intent,
+      date: Date.now(),
+      reference: data.reference,
+      txnId: data.reference
     };
-    
     localStorage.setItem('receipt', JSON.stringify(receipt));
-    window.location.href='/dashboard.html';
+
+    // Open Opay app with auto-fill
+    window.location.href = data.paymentUrl;
 
   }catch(e){
-    alert('Payment failed. Try again.');
+    console.error(e);
+    alert('Payment failed: ' + e.message);
     btn.disabled = false;
     btnText.style.display = 'block';
     loader.style.display = 'none';
