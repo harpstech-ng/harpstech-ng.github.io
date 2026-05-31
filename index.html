@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Harps VoicePay | Speak to Pay</title>
 
-<!-- PWA Tags - Added -->
+<!-- PWA Tags -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#00D084">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -169,7 +169,7 @@ h1{
   </span>
 
   <h1>Speak Your Payment</h1>
-  <p class="sub">Voice-authenticated payments powered by Gemini AI</p>
+  <p class="sub">Voice-authenticated payments powered by Groq AI</p>
   <p class="bio">Tap mic and speak naturally in English, Yoruba, Hausa, or Pidgin</p>
 
   <div class="mic-wrap">
@@ -205,7 +205,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Replace with your Render URL
+// Render backend URL
 const BACKEND_URL = 'https://harps-voicepay.onrender.com';
 
 const mic = document.getElementById('mic');
@@ -216,6 +216,31 @@ onAuthStateChanged(auth, (user) => {
   if (!user) window.location.href = '/login.html';
   else localStorage.setItem('uid', user.uid);
 });
+
+// Voice TTS function - Nigerian male voice
+function speakHarps(text, language = 'en') {
+  return new Promise((resolve) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = language === 'yo'? 'yo-NG' : language === 'ha'? 'ha-NG' : language === 'ig'? 'ig-NG' : 'en-NG';
+    utterance.pitch = 0.8; // Male voice
+    utterance.rate = 0.95; // Natural speed
+    utterance.volume = 1;
+    utterance.onend = resolve;
+    speechSynthesis.speak(utterance);
+  });
+}
+
+// Check saved recipients
+function getSavedRecipient(name) {
+  const saved = JSON.parse(localStorage.getItem('harps_recipients') || '{}');
+  return saved[name.toLowerCase()];
+}
+
+function saveRecipient(name, bank, accountNumber) {
+  const saved = JSON.parse(localStorage.getItem('harps_recipients') || '{}');
+  saved[name.toLowerCase()] = { bank, accountNumber };
+  localStorage.setItem('harps_recipients', JSON.stringify(saved));
+}
 
 // Speech recognition setup
 let recognition;
@@ -237,16 +262,47 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
     mic.classList.remove('recording');
 
     try{
+      // Step 1: Parse intent
       const res = await fetch(BACKEND_URL + '/parse', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({transcript:text})
       });
       const data = await res.json();
+
+      // Step 2: Check if recipient exists in saved list
+      if (data.intent === 'transfer' && data.recipient) {
+        const savedRecipient = getSavedRecipient(data.recipient);
+        if (savedRecipient) {
+          data.recipient_bank = savedRecipient.bank;
+          data.recipient_account = savedRecipient.accountNumber;
+          status.innerText = `Found saved: ${data.recipient} - ${savedRecipient.bank}`;
+        }
+      }
+
+      // Step 3: Get Harps voice response
+      const speakRes = await fetch(BACKEND_URL + '/speak', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          text: text,
+          language: data.language_detected
+        })
+      });
+      const voiceData = await speakRes.json();
+
+      // Step 4: Speak it out loud
+      status.innerText = voiceData.voice_text;
+      await speakHarps(voiceData.voice_text, data.language_detected);
+
+      // Step 5: Save intent and go to flow
       localStorage.setItem('intent', JSON.stringify(data));
+      localStorage.setItem('last_transcript', text);
       window.location.href = '/flow.html';
+
     }catch(err){
       status.innerText = 'Error connecting to server. Try again.';
+      await speakHarps('Sorry, network error. Try again.', 'en');
       mic.classList.remove('recording');
     }
   };
@@ -266,6 +322,7 @@ mic.onclick = () => {
     alert('Voice input not supported. Use Safari on iPhone or Chrome on Android.');
     return;
   }
+  speechSynthesis.cancel(); // Stop any current speech
   recognition.start();
 };
 
@@ -276,7 +333,7 @@ window.logout = async () => {
 };
 </script>
 
-<!-- Service Worker Registration - Added -->
+<!-- Service Worker Registration -->
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
