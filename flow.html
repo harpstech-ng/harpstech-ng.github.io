@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Harps VoicePay | Confirm Payment</title>
 
-<!-- PWA Tags - Added -->
+<!-- PWA Tags -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#00D084">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -113,9 +113,9 @@ input{
   background:rgba(255,255,255,0.06);
   color:white;
   text-align:center;
-  font-size:28px;
-  letter-spacing:12px;
+  font-size:18px;
   outline:none;
+  margin-bottom:12px;
 }
 input:focus{
   border-color:var(--green);
@@ -138,6 +138,11 @@ input:focus{
 .btn:disabled{
   opacity:0.5;
   cursor:not-allowed;
+}
+.btn-secondary{
+  background:rgba(255,255,255,0.08);
+  color:white;
+  border:1px solid var(--border);
 }
 .footer{
   text-align:center;
@@ -166,6 +171,14 @@ input:focus{
 @keyframes spin{
   to{transform:rotate(360deg)}
 }
+.hidden{display:none}
+.harps-status{
+  text-align:center;
+  color:var(--green);
+  font-size:14px;
+  margin:12px 0;
+  min-height:20px;
+}
 </style>
 </head>
 <body>
@@ -180,7 +193,7 @@ input:focus{
 </span>
 
 <h2>Confirm Payment</h2>
-<p class="sub">Review details and enter your PIN to complete</p>
+<p class="sub">Review details and proceed to Opay</p>
 
 <div class="warning" id="warning">
   ⚠️ Voice stress detected. Extra verification required for security.
@@ -197,16 +210,30 @@ input:focus{
     <span class="value" id="intent">-</span>
   </div>
   <div class="row">
+    <span class="label">Bank</span>
+    <span class="value" id="bank">-</span>
+  </div>
+  <div class="row">
     <span class="label">Method</span>
-    <span class="value">Voice Biometrics</span>
+    <span class="value">VoicePay + Opay</span>
   </div>
 </div>
 
-<div class="card">
-  <h3>Enter 4-Digit Transaction PIN</h3>
-  <input type="password" id="pin" maxlength="4" inputmode="numeric" placeholder="••••">
-  <button class="btn" id="payBtn" onclick="pay()">
-    <span id="btnText">Confirm & Pay</span>
+<!-- Bank Details Capture - Shows only if recipient not saved -->
+<div class="card hidden" id="bankCard">
+  <h3>Recipient Not Found</h3>
+  <p style="color:#aaa;font-size:13px;margin-bottom:16px" id="bankPrompt">Which bank does this person use?</p>
+  <input type="text" id="bankInput" placeholder="e.g GTBank, Access, Opay" autocomplete="off">
+  <input type="text" id="accountInput" placeholder="Account number" inputmode="numeric" maxlength="10" class="hidden">
+  <button class="btn" id="saveBankBtn" onclick="saveBankDetails()">Save & Continue</button>
+</div>
+
+<div class="card" id="confirmCard">
+  <h3>Proceed to Opay</h3>
+  <p style="color:#aaa;font-size:13px;margin-bottom:16px">You'll be redirected to Opay app. Amount and recipient will be auto-filled. Just enter your Opay PIN to complete.</p>
+  <div class="harps-status" id="harpsStatus"></div>
+  <button class="btn" id="payBtn" onclick="proceedToOpay()">
+    <span id="btnText">Open Opay & Pay ₦0</span>
     <div class="loader" id="loader"></div>
   </button>
 </div>
@@ -216,7 +243,7 @@ input:focus{
     <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
     Secured with 256-bit AES encryption
   </div>
-  <div>Voice-authenticated by Gemini AI</div>
+  <div>Voice-authenticated by Groq AI</div>
 </div>
 
 <script type="module">
@@ -237,12 +264,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Backend URL - change this to your Render URL
-const BACKEND_URL = 'https://your-app-name.onrender.com';
+// Backend URL - YOUR RENDER URL
+const BACKEND_URL = 'https://harps-voicepay.onrender.com';
 
 // Get intent from previous page
-const intent = JSON.parse(localStorage.getItem('intent'));
-if(!intent) window.location.href='/index.html';
+const intent = JSON.parse(localStorage.getItem('intent') || '{}');
+if(!intent.amount) window.location.href='/index.html';
 
 // Auth check
 onAuthStateChanged(auth, (user) => {
@@ -250,41 +277,129 @@ onAuthStateChanged(auth, (user) => {
   else window.currentUser = user;
 });
 
+// Voice TTS
+function speakHarps(text) {
+  return new Promise((resolve) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = intent.language_detected === 'yo'? 'yo-NG' : 'en-NG';
+    utterance.pitch = 0.8;
+    utterance.rate = 0.95;
+    utterance.onend = resolve;
+    speechSynthesis.speak(utterance);
+  });
+}
+
+// Recipient storage
+function getSavedRecipient(name) {
+  const saved = JSON.parse(localStorage.getItem('harps_recipients') || '{}');
+  return saved[name.toLowerCase()];
+}
+
+function saveRecipient(name, bank, accountNumber) {
+  const saved = JSON.parse(localStorage.getItem('harps_recipients') || '{}');
+  saved[name.toLowerCase()] = { bank, accountNumber, saved_at: Date.now() };
+  localStorage.setItem('harps_recipients', JSON.stringify(saved));
+}
+
 // Populate data
 document.getElementById('amount').innerText = '₦' + formatNumber(intent.amount);
 document.getElementById('recipient').innerText = intent.recipient || '-';
 document.getElementById('intent').innerText = capitalize(intent.intent || 'transfer');
+document.getElementById('btnText').innerText = `Open Opay & Pay ₦${formatNumber(intent.amount)}`;
 
 // Show warning if voice was stressed/rushed
 if(intent.requires_extra_verification){
   document.getElementById('warning').style.display='block';
 }
 
-window.pay = async function pay(){
-  const pin = document.getElementById('pin').value;
+// Check if recipient bank is saved
+let recipientBank = intent.recipient_bank;
+let recipientAccount = intent.recipient_account;
+
+if (intent.intent === 'transfer' && intent.recipient) {
+  const saved = getSavedRecipient(intent.recipient);
+  if (saved) {
+    recipientBank = saved.bank;
+    recipientAccount = saved.accountNumber;
+    document.getElementById('bank').innerText = saved.bank;
+  } else {
+    // Show bank capture flow
+    document.getElementById('bankCard').classList.remove('hidden');
+    document.getElementById('confirmCard').classList.add('hidden');
+    document.getElementById('bank').innerText = 'Not saved';
+    
+    // Harps asks for bank
+    speakHarps(`I no see ${intent.recipient} account. Which bank ${intent.recipient} dey use?`);
+  }
+} else {
+  document.getElementById('bank').innerText = 'N/A';
+}
+
+let bankStep = 'bank'; // bank -> account
+
+window.saveBankDetails = async function() {
+  const bankInput = document.getElementById('bankInput');
+  const accountInput = document.getElementById('accountInput');
+  const prompt = document.getElementById('bankPrompt');
+
+  if (bankStep === 'bank') {
+    const bank = bankInput.value.trim();
+    if (!bank) {
+      alert('Please enter bank name');
+      return;
+    }
+    recipientBank = bank;
+    bankStep = 'account';
+    bankInput.classList.add('hidden');
+    accountInput.classList.remove('hidden');
+    prompt.innerText = `Enter ${intent.recipient}'s account number`;
+    accountInput.focus();
+    await speakHarps(`Okay, ${bank}. Account number?`);
+  } else {
+    const account = accountInput.value.trim();
+    if (account.length < 10) {
+      alert('Please enter valid 10-digit account number');
+      return;
+    }
+    recipientAccount = account;
+    saveRecipient(intent.recipient, recipientBank, recipientAccount);
+    
+    document.getElementById('bankCard').classList.add('hidden');
+    document.getElementById('confirmCard').classList.remove('hidden');
+    document.getElementById('bank').innerText = recipientBank;
+    
+    await speakHarps(`Saved. ${intent.recipient} for ${recipientBank}. Ready to pay ₦${intent.amount}`);
+  }
+}
+
+window.proceedToOpay = async function proceedToOpay(){
   const btn = document.getElementById('payBtn');
   const btnText = document.getElementById('btnText');
   const loader = document.getElementById('loader');
+  const harpsStatus = document.getElementById('harpsStatus');
 
-  if(pin.length !== 4){
-    alert('Enter a valid 4-digit PIN');
+  // Check if bank details needed
+  if (intent.intent === 'transfer' && !recipientBank) {
+    alert('Please add recipient bank details first');
     return;
   }
 
-  // Show loading state
   btn.disabled = true;
   btnText.style.display = 'none';
   loader.style.display = 'block';
+  harpsStatus.innerText = 'Creating Opay payment link...';
 
   try{
-    // Call backend to create Opay payment link
+    // Call backend to create Opay payment link with auto-fill
     const res = await fetch(BACKEND_URL + '/create-opay-link', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         amount: intent.amount,
         recipient: intent.recipient,
-        narration: `VoicePay ${intent.intent} to ${intent.recipient}`,
+        bank: recipientBank,
+        account_number: recipientAccount,
+        narration: `Harps VoicePay to ${intent.recipient}`,
         userId: window.currentUser.uid
       })
     });
@@ -299,6 +414,7 @@ window.pay = async function pay(){
     const receipt = {
       amount: intent.amount,
       recipient: intent.recipient,
+      bank: recipientBank,
       intent: intent.intent,
       date: Date.now(),
       reference: data.reference,
@@ -306,12 +422,18 @@ window.pay = async function pay(){
     };
     localStorage.setItem('receipt', JSON.stringify(receipt));
 
-    // Open Opay app with auto-fill
-    window.location.href = data.paymentUrl;
+    harpsStatus.innerText = 'Opening Opay app...';
+    await speakHarps('Opening Opay. Just enter your PIN to complete.');
+
+    // Open Opay app with auto-fill - user only enters PIN
+    setTimeout(() => {
+      window.location.href = data.paymentUrl;
+    }, 1000);
 
   }catch(e){
     console.error(e);
     alert('Payment failed: ' + e.message);
+    harpsStatus.innerText = '';
     btn.disabled = false;
     btnText.style.display = 'block';
     loader.style.display = 'none';
@@ -327,7 +449,7 @@ function capitalize(s){
 }
 </script>
 
-<!-- Service Worker Registration - Added -->
+<!-- Service Worker Registration -->
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
