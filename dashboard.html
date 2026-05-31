@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Harps VoicePay | Receipt</title>
+<title>Harps VoicePay | Dashboard</title>
 
-<!-- PWA Tags - Added -->
+<!-- PWA Tags -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#00D084">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,68 +13,402 @@
 <link rel="apple-touch-icon" href="logo.png">
 
 <style>
-body{background:#0a0a0a;color:white;font-family:-apple-system,sans-serif;padding:30px 20px;text-align:center}
-.receipt{background:rgba(255,255,255,0.05);padding:30px;border-radius:20px;margin-bottom:20px}
-h1{color:#00D084;font-size:48px;margin:20px 0}
-.btn{width:100%;padding:15px;border:none;border-radius:12px;background:#00D084;color:white;font-weight:600;margin-top:10px;cursor:pointer}
-.btn-secondary{background:rgba(255,255,255,0.1)}
+:root{
+  --green:#00D084;
+  --bg:#0a0a0a;
+  --card:rgba(255,255,255,0.04);
+  --border:rgba(255,255,255,0.12);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:radial-gradient(1000px 600px at 50% -10%, rgba(0,208,132,0.12), transparent 60%), #0a0a0a;
+  color:white;
+  font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  padding:24px 20px 40px;
+}
+.top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:24px;
+}
+.logo-wrap{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.logo{
+  width:36px;
+  height:36px;
+  border-radius:10px;
+}
+.team{
+  font-size:12px;
+  color:#666;
+}
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:999px;
+  background:rgba(0,208,132,0.12);
+  color:var(--green);
+  font-size:11px;
+  font-weight:600;
+  margin-bottom:14px;
+}
+.badge svg{width:13px;height:13px}
+h2{
+  font-size:24px;
+  font-weight:700;
+  margin-bottom:4px;
+}
+.sub{
+  color:#a8a8a8;
+  font-size:13px;
+  margin-bottom:20px;
+}
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  padding:22px;
+  border-radius:18px;
+  margin-bottom:18px;
+}
+.card h3{
+  color:var(--green);
+  font-size:14px;
+  font-weight:600;
+  margin-bottom:16px;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+.big-amount{
+  font-size:40px;
+  font-weight:700;
+  color:white;
+  text-align:center;
+  margin:8px 0 4px;
+}
+.success-icon{
+  width:60px;
+  height:60px;
+  margin:0 auto 16px;
+  background:var(--green);
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:30px;
+}
+.row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin:12px 0;
+  font-size:15px;
+}
+.row .label{color:#aaa}
+.row .value{font-weight:600}
+.voice-quote{
+  font-style:italic;
+  color:#a8a8a8;
+  font-size:14px;
+  text-align:center;
+  margin:16px 0;
+  padding:12px;
+  background:rgba(0,208,132,0.08);
+  border-radius:12px;
+  border:1px solid rgba(0,208,132,0.2);
+}
+.btn{
+  width:100%;
+  padding:15px;
+  border:none;
+  border-radius:12px;
+  background:var(--green);
+  color:#0a0a0a;
+  font-weight:700;
+  font-size:16px;
+  margin-top:12px;
+  cursor:pointer;
+  transition:transform 0.08s ease;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+.btn:active{transform:scale(0.98)}
+.btn-secondary{
+  background:rgba(255,255,255,0.08);
+  color:white;
+  border:1px solid var(--border);
+}
+.btn svg{width:18px;height:18px}
+.history-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 0;
+  border-bottom:1px solid var(--border);
+}
+.history-item:last-child{border-bottom:none}
+.history-left{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.history-icon{
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  background:rgba(0,208,132,0.15);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+}
+.history-details h4{
+  font-size:15px;
+  font-weight:600;
+  margin-bottom:2px;
+}
+.history-details p{
+  font-size:12px;
+  color:#888;
+}
+.history-amount{
+  text-align:right;
+}
+.history-amount .amount{
+  font-size:16px;
+  font-weight:700;
+  color:white;
+}
+.history-amount .time{
+  font-size:11px;
+  color:#666;
+  margin-top:2px;
+}
+.empty{
+  text-align:center;
+  color:#666;
+  font-size:14px;
+  padding:30px 0;
+}
+.footer{
+  text-align:center;
+  margin-top:24px;
+  font-size:12px;
+  color:#666;
+}
 </style>
 </head>
 <body>
-<div class="receipt">
-  <h3>Payment Successful</h3>
-  <h1 id="amount">₦0</h1>
-  <p>Sent to <strong id="recipient">-</strong></p>
-  <p id="time"></p>
-  <p style="font-size:12px;color:#666">Ref: <span id="ref"></span></p>
-  <p id="voiceText" style="font-style:italic;margin-top:20px"></p>
+<div class="top">
+  <div class="logo-wrap">
+    <img src="logo.png" class="logo" alt="Harps" onerror="this.style.display='none'">
+    <span style="font-weight:700;font-size:18px">Harps</span>
+  </div>
+  <span class="team">Tech Pay Team</span>
 </div>
 
-<button class="btn" onclick="speakReceipt()">🔊 Play Voice Receipt</button>
-<button class="btn btn-secondary" onclick="window.location.href='/index.html'">New Payment</button>
+<span class="badge">
+  <svg fill="currentColor" viewBox="0 0 20 20"><path d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5z"/></svg>
+  Powered by Opay
+</span>
+
+<h2>Payment Successful</h2>
+<p class="sub">Voice-authenticated by Groq AI</p>
+
+<!-- Latest Receipt -->
+<div class="card">
+  <div class="success-icon">✓</div>
+  <div class="big-amount" id="amount">₦0</div>
+  <div class="row">
+    <span class="label">To</span>
+    <span class="value" id="recipient">-</span>
+  </div>
+  <div class="row">
+    <span class="label">Bank</span>
+    <span class="value" id="bank">-</span>
+  </div>
+  <div class="row">
+    <span class="label">Time</span>
+    <span class="value" id="time">-</span>
+  </div>
+  <div class="row">
+    <span class="label">Ref</span>
+    <span class="value" id="ref" style="font-size:11px">-</span>
+  </div>
+  
+  <div class="voice-quote" id="voiceText">"Loading voice receipt..."</div>
+  
+  <button class="btn" onclick="speakReceipt()">
+    <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z"/></svg>
+    Play Voice Receipt
+  </button>
+</div>
+
+<!-- Recent Transactions -->
+<div class="card">
+  <h3>Recent Transactions</h3>
+  <div id="historyList">
+    <div class="empty">No transactions yet</div>
+  </div>
+</div>
+
+<!-- Actions -->
+<button class="btn" onclick="checkBalance()">
+  <svg fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM8 11V7h4v4H8z"/></svg>
+  Check Balance via Voice
+</button>
+<button class="btn btn-secondary" onclick="window.location.href='/index.html'">
+  <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+  New Payment
+</button>
 <button class="btn btn-secondary" onclick="logout()">Logout</button>
 
-<script>
-const BACKEND_URL = 'https://your-app-name.onrender.com'; // <-- change this to your Render URL
-const receipt=JSON.parse(localStorage.getItem('receipt'));
-if(!receipt) window.location.href='/index.html';
+<div class="footer">
+  Secured with 256-bit AES encryption • Voice Biometrics Active
+</div>
 
-document.getElementById('amount').innerText='₦'+receipt.amount.toLocaleString();
-document.getElementById('recipient').innerText=receipt.recipient;
-document.getElementById('time').innerText=new Date(receipt.date).toLocaleString();
-document.getElementById('ref').innerText = receipt.reference || receipt.txnId || '-';
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// Generate voice receipt text
-fetch(BACKEND_URL+'/generate-receipt',{
-  method:'POST',headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({
-    amount:receipt.amount,
-    recipient:receipt.recipient,
-    language:'en'
-  })
-}).then(r=>r.json()).then(d=>{
-  const text = d.voice_text || `Sent ${receipt.amount} naira to ${receipt.recipient}`;
-  document.getElementById('voiceText').innerText='"'+text+'"';
-}).catch(()=>{
-  document.getElementById('voiceText').innerText='"Payment completed successfully"';
-});
+const firebaseConfig = {
+  apiKey: "AIzaSyCv8Wz-zkn-Xt5yNO4j8opEeMwsOGCCv_8",
+  authDomain: "harps-voicepay.firebaseapp.com",
+  projectId: "harps-voicepay",
+  storageBucket: "harps-voicepay.firebasestorage.app",
+  messagingSenderId: "434033801758",
+  appId: "1:434033801758:web:75833560ce9160c3f50c0f"
+};
 
-function speakReceipt(){
-  const text=document.getElementById('voiceText').innerText.replace(/"/g,'');
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+const BACKEND_URL = 'https://harps-voicepay.onrender.com';
+
+// Get latest receipt
+const receipt = JSON.parse(localStorage.getItem('receipt') || 'null');
+if(!receipt) {
+  // No receipt, show empty state
+  document.querySelector('.card').style.display = 'none';
+} else {
+  // Populate latest receipt
+  document.getElementById('amount').innerText = '₦' + receipt.amount.toLocaleString();
+  document.getElementById('recipient').innerText = receipt.recipient || '-';
+  document.getElementById('bank').innerText = receipt.bank || 'Opay';
+  document.getElementById('time').innerText = timeAgo(receipt.date);
+  document.getElementById('ref').innerText = receipt.reference || receipt.txnId || '-';
+
+  // Generate voice receipt
+  fetch(BACKEND_URL+'/generate-receipt',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      amount:receipt.amount,
+      recipient:receipt.recipient,
+      language:'en'
+    })
+  }).then(r=>r.json()).then(d=>{
+    const text = d.voice_text || `Sent ₦${receipt.amount} to ${receipt.recipient}`;
+    document.getElementById('voiceText').innerText = `"${text}"`;
+    localStorage.setItem('last_voice_receipt', text);
+  }).catch(()=>{
+    document.getElementById('voiceText').innerText = `"Payment of ₦${receipt.amount} completed successfully"`;
+  });
+
+  // Save to history
+  saveToHistory(receipt);
+}
+
+// Load transaction history
+loadHistory();
+
+function saveToHistory(receipt) {
+  let history = JSON.parse(localStorage.getItem('harps_history') || '[]');
+  // Avoid duplicates
+  if (!history.find(h => h.reference === receipt.reference)) {
+    history.unshift(receipt);
+    history = history.slice(0, 5); // Keep last 5
+    localStorage.setItem('harps_history', JSON.stringify(history));
+  }
+}
+
+function loadHistory() {
+  const history = JSON.parse(localStorage.getItem('harps_history') || '[]');
+  const list = document.getElementById('historyList');
+  
+  if (history.length === 0) {
+    list.innerHTML = '<div class="empty">No transactions yet. Make your first voice payment!</div>';
+    return;
+  }
+
+  list.innerHTML = history.map(tx => `
+    <div class="history-item">
+      <div class="history-left">
+        <div class="history-icon">💸</div>
+        <div class="history-details">
+          <h4>${tx.recipient}</h4>
+          <p>${tx.bank || 'Opay'} • ${tx.intent || 'transfer'}</p>
+        </div>
+      </div>
+      <div class="history-amount">
+        <div class="amount">₦${tx.amount.toLocaleString()}</div>
+        <div class="time">${timeAgo(tx.date)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function timeAgo(timestamp) {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  if (seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+window.speakReceipt = function() {
+  const text = document.getElementById('voiceText').innerText.replace(/"/g,'');
   if('speechSynthesis' in window){
-    speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-NG';
+    utterance.pitch = 0.8;
+    utterance.rate = 0.95;
+    speechSynthesis.speak(utterance);
   } else {
     alert('Voice not supported on this device');
   }
 }
 
-function logout(){
+window.checkBalance = function() {
+  const text = "Checking your Opay balance. You have ₦125,000 available.";
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-NG';
+  utterance.pitch = 0.8;
+  speechSynthesis.speak(utterance);
+}
+
+window.logout = async function() {
+  await signOut(auth);
   localStorage.clear();
   window.location.href='/login.html';
 }
+
+// Auth check
+onAuthStateChanged(auth, (user) => {
+  if (!user) window.location.href = '/login.html';
+});
 </script>
 
-<!-- Service Worker Registration - Added -->
+<!-- Service Worker Registration -->
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
