@@ -205,7 +205,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Render backend URL
+// IMPORTANT: Replace with your actual Render URL
 const BACKEND_URL = 'https://harps-voicepay.onrender.com';
 
 const mic = document.getElementById('mic');
@@ -217,15 +217,20 @@ onAuthStateChanged(auth, (user) => {
   else localStorage.setItem('uid', user.uid);
 });
 
-// Voice TTS function - Nigerian male voice
+// Clear old test data
+localStorage.removeItem('harpsReply');
+
+// Nigerian male voice TTS
 function speakHarps(text, language = 'en') {
   return new Promise((resolve) => {
+    speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = language === 'yo'? 'yo-NG' : language === 'ha'? 'ha-NG' : language === 'ig'? 'ig-NG' : 'en-NG';
-    utterance.pitch = 0.8; // Male voice
-    utterance.rate = 0.95; // Natural speed
+    utterance.pitch = 0.8;
+    utterance.rate = 0.95;
     utterance.volume = 1;
     utterance.onend = resolve;
+    utterance.onerror = resolve;
     speechSynthesis.speak(utterance);
   });
 }
@@ -244,6 +249,8 @@ function saveRecipient(name, bank, accountNumber) {
 
 // Speech recognition setup
 let recognition;
+let isListening = false;
+
 if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
@@ -252,25 +259,31 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   recognition.interimResults = false;
 
   recognition.onstart = () => {
+    isListening = true;
     mic.classList.add('recording');
     status.innerText = 'Listening... Speak now';
+  };
+
+  recognition.onend = () => {
+    isListening = false;
+    mic.classList.remove('recording');
   };
 
   recognition.onresult = async (e) => {
     const text = e.results[0][0].transcript;
     status.innerText = `Processing: "${text}"`;
-    mic.classList.remove('recording');
 
     try{
-      // Step 1: Parse intent
       const res = await fetch(BACKEND_URL + '/parse', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({transcript:text})
       });
+
+      if (!res.ok) throw new Error('Server error ' + res.status);
       const data = await res.json();
 
-      // Step 2: Check if recipient exists in saved list
+      // Check if recipient exists in saved list
       if (data.intent === 'transfer' && data.recipient) {
         const savedRecipient = getSavedRecipient(data.recipient);
         if (savedRecipient) {
@@ -280,40 +293,35 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
         }
       }
 
-      // Step 3: Get Harps voice response
-      const speakRes = await fetch(BACKEND_URL + '/speak', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          text: text,
-          language: data.language_detected
-        })
-      });
-      const voiceData = await speakRes.json();
+      // Speak the response from /parse
+      status.innerText = data.response || 'Processing...';
+      await speakHarps(data.response, data.language_detected);
 
-      // Step 4: Speak it out loud
-      status.innerText = voiceData.voice_text;
-      await speakHarps(voiceData.voice_text, data.language_detected);
-
-      // Step 5: Save intent and go to flow
+      // Save and redirect to flow
       localStorage.setItem('intent', JSON.stringify(data));
       localStorage.setItem('last_transcript', text);
-      window.location.href = '/flow.html';
+
+      setTimeout(() => {
+        window.location.href = '/flow.html';
+      }, 1500);
 
     }catch(err){
-      status.innerText = 'Error connecting to server. Try again.';
-      await speakHarps('Sorry, network error. Try again.', 'en');
-      mic.classList.remove('recording');
+      console.error('Fetch error:', err);
+      status.innerText = 'Error: Cannot reach server. Check Render logs.';
+      await speakHarps('Sorry, I cannot connect to the server right now', 'en');
     }
   };
 
   recognition.onerror = (e) => {
-    status.innerText = 'Mic error: ' + e.error;
+    isListening = false;
     mic.classList.remove('recording');
-  };
-
-  recognition.onend = () => {
-    mic.classList.remove('recording');
+    if (e.error === 'no-speech') {
+      status.innerText = 'No speech detected. Tap mic again.';
+    } else if (e.error === 'not-allowed') {
+      status.innerText = 'Mic permission denied. Enable in browser settings.';
+    } else if (e.error!== 'aborted') {
+      status.innerText = 'Mic error: ' + e.error;
+    }
   };
 }
 
@@ -322,8 +330,17 @@ mic.onclick = () => {
     alert('Voice input not supported. Use Safari on iPhone or Chrome on Android.');
     return;
   }
-  speechSynthesis.cancel(); // Stop any current speech
-  recognition.start();
+  if (isListening) {
+    recognition.stop();
+    return;
+  }
+  speechSynthesis.cancel();
+  try {
+    recognition.start();
+  } catch (e) {
+    console.log('Recognition start error:', e);
+    status.innerText = 'Tap again to restart mic';
+  }
 };
 
 window.logout = async () => {
