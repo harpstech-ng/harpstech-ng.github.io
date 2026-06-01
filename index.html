@@ -5,144 +5,323 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Harps VoicePay | Speak to Pay</title>
 
-<!-- PWA Tags -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#00D084">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
 :root{
   --green:#00D084;
-  --bg:#0a0a0a;
-  --card:rgba(255,255,255,0.04);
-  --border:rgba(255,255,255,0.12);
+  --green-glow:rgba(0,208,132,0.3);
+  --bg:#0A0A0F;
+  --card:rgba(255,255,255,0.03);
+  --card-hover:rgba(255,255,255,0.06);
+  --border:rgba(255,255,255,0.08);
+  --text-muted:#8A8A9E;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{
-  background:radial-gradient(1200px 800px at 50% -20%, rgba(0,208,132,0.18), transparent 50%), #0a0a0a;
+  background:
+    radial-gradient(1000px 600px at 50% -10%, rgba(0,208,132,0.15), transparent 60%),
+    radial-gradient(800px 400px at 80% 100%, rgba(138,43,226,0.08), transparent 50%),
+    var(--bg);
   color:white;
-  font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
   min-height:100vh;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  padding:30px 20px;
+  padding:24px 16px;
+  overflow-x:hidden;
 }
 .top-bar{
-  position:absolute;
-  top:20px;
+  position:fixed;
+  top:0;
   left:0;
   right:0;
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:0 24px;
+  padding:16px 24px;
+  backdrop-filter:blur(20px);
+  background:rgba(10,10,15,0.7);
+  border-bottom:1px solid var(--border);
+  z-index:100;
 }
 .team{
-  font-size:12px;
-  color:#666;
+  font-size:13px;
+  color:var(--text-muted);
   font-weight:500;
+  display:flex;
+  align-items:center;
+  gap:8px;
 }
-.logout{
-  background:rgba(255,255,255,0.08);
+.team-dot{
+  width:6px;
+  height:6px;
+  background:var(--green);
+  border-radius:50%;
+  box-shadow:0 0 10px var(--green-glow);
+  animation:pulse-dot 2s infinite;
+}
+@keyframes pulse-dot{
+ 0%,100%{opacity:1}
+ 50%{opacity:0.4}
+}
+.nav-group{
+  display:flex;
+  gap:8px;
+}
+.nav-btn{
+  background:var(--card);
   border:1px solid var(--border);
   color:white;
-  padding:8px 14px;
-  border-radius:10px;
+  padding:9px 16px;
+  border-radius:12px;
   font-size:13px;
+  font-weight:500;
   cursor:pointer;
+  transition:all 0.2s ease;
+  backdrop-filter:blur(10px);
+}
+.nav-btn:hover{
+  background:var(--card-hover);
+  border-color:rgba(0,208,132,0.3);
+  transform:translateY(-1px);
 }
 .container{
   text-align:center;
-  max-width:420px;
+  max-width:440px;
   width:100%;
+  margin-top:60px;
+}
+.logo-wrap{
+  position:relative;
+  display:inline-block;
+  margin-bottom:20px;
 }
 .logo{
-  width:80px;
-  height:80px;
-  margin:0 auto 16px;
-  display:block;
-  border-radius:20px;
+  width:90px;
+  height:90px;
+  border-radius:24px;
+  box-shadow:0 20px 60px rgba(0,208,132,0.25);
+}
+.logo-glow{
+  position:absolute;
+  inset:-20px;
+  background:radial-gradient(circle, var(--green-glow), transparent 70%);
+  filter:blur(30px);
+  z-index:-1;
+  animation:glow-pulse 3s ease-in-out infinite;
+}
+@keyframes glow-pulse{
+ 0%,100%{opacity:0.5;transform:scale(0.95)}
+ 50%{opacity:0.8;transform:scale(1.05)}
 }
 .badge{
   display:inline-flex;
   align-items:center;
   gap:6px;
-  padding:5px 12px;
+  padding:6px 14px;
   border-radius:999px;
-  background:rgba(0,208,132,0.12);
+  background:linear-gradient(135deg, rgba(0,208,132,0.15), rgba(0,208,132,0.05));
+  border:1px solid rgba(0,208,132,0.2);
   color:var(--green);
   font-size:12px;
   font-weight:600;
-  margin-bottom:16px;
+  margin-bottom:20px;
+  backdrop-filter:blur(10px);
 }
 .badge svg{width:14px;height:14px}
 h1{
-  font-size:32px;
+  font-size:36px;
   font-weight:700;
-  margin-bottom:8px;
+  margin-bottom:10px;
+  background:linear-gradient(135deg, #fff 30%, #8A8A9E);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
 }
 .sub{
-  color:#a8a8a8;
+  color:var(--text-muted);
   font-size:15px;
-  margin-bottom:6px;
+  margin-bottom:8px;
+  font-weight:400;
 }
 .bio{
   color:var(--green);
   font-size:13px;
   font-weight:500;
-  margin-bottom:40px;
+  margin-bottom:48px;
+  letter-spacing:0.3px;
 }
-.mic-wrap{
+.mic-section{
   position:relative;
-  display:inline-block;
+  margin-bottom:32px;
+}
+.mic-ring{
+  position:absolute;
+  inset:-30px;
+  border:2px solid rgba(0,208,132,0.1);
+  border-radius:50%;
+  animation:ring-pulse 2s ease-out infinite;
+}
+@keyframes ring-pulse{
+  0%{transform:scale(0.8);opacity:1}
+  100%{transform:scale(1.3);opacity:0}
 }
 .mic-btn{
-  width:160px;
-  height:160px;
+  width:180px;
+  height:180px;
   border-radius:50%;
-  background:linear-gradient(135deg, #00D084, #00a866);
+  background:linear-gradient(135deg, #00D084 0%, #00A866 100%);
   border:none;
-  font-size:60px;
+  font-size:70px;
   cursor:pointer;
-  box-shadow:0 0 60px rgba(0,208,132,0.4);
-  transition:transform 0.15s ease;
+  box-shadow:
+    0 0 80px rgba(0,208,132,0.4),
+    0 20px 60px rgba(0,0,0,0.4),
+    inset 0 2px 0 rgba(255,255,255,0.2);
+  transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position:relative;
+  z-index:2;
 }
-.mic-btn:active{transform:scale(0.95)}
+.mic-btn:active{transform:scale(0.92)}
 .mic-btn.recording{
-  background:linear-gradient(135deg, #ff3b30, #d62828);
-  animation:pulse 1.2s infinite;
+  background:linear-gradient(135deg, #ff3b30 0%, #d62828 100%);
+  animation:mic-pulse 1s ease-in-out infinite;
 }
-@keyframes pulse{
- 0%,100%{box-shadow:0 0 40px rgba(255,59,48,0.5)}
- 50%{box-shadow:0 0 80px rgba(255,59,48,0.8)}
+@keyframes mic-pulse{
+ 0%,100%{box-shadow:0 0 60px rgba(255,59,48,0.6), 0 20px 60px rgba(0,0,0,0.4)}
+ 50%{box-shadow:0 0 100px rgba(255,59,48,0.9), 0 20px 60px rgba(0,0,0,0.4)}
+}
+.transcript-live{
+  min-height:24px;
+  margin-top:16px;
+  font-size:14px;
+  color:var(--green);
+  font-weight:500;
+  font-style:italic;
+  opacity:0;
+  transition:opacity 0.3s ease;
+}
+.transcript-live.show{opacity:1}
+.confidence-bar{
+  width:100%;
+  height:3px;
+  background:var(--card);
+  border-radius:999px;
+  margin-top:12px;
+  overflow:hidden;
+  opacity:0;
+  transition:opacity 0.3s ease;
+}
+.confidence-bar.show{opacity:1}
+.confidence-fill{
+  height:100%;
+  background:linear-gradient(90deg, #ff3b30, #ff9500, var(--green));
+  border-radius:999px;
+  transition:width 0.5s ease;
 }
 .hint{
-  margin-top:24px;
-  color:#888;
-  font-size:14px;
+  margin-top:32px;
+  color:var(--text-muted);
+  font-size:13px;
   font-style:italic;
+  line-height:1.6;
 }
-.status{
-  margin-top:20px;
-  padding:14px;
-  border-radius:12px;
+.status-card{
+  margin-top:24px;
+  padding:18px;
+  border-radius:16px;
   background:var(--card);
   border:1px solid var(--border);
   font-size:14px;
-  min-height:48px;
+  min-height:56px;
   display:flex;
   align-items:center;
   justify-content:center;
+  backdrop-filter:blur(20px);
+  transition:all 0.3s ease;
 }
+.status-card.active{
+  border-color:rgba(0,208,132,0.3);
+  background:rgba(0,208,132,0.05);
+}
+.confirm-box{
+  margin-top:16px;
+  display:none;
+  gap:12px;
+  animation:slide-up 0.3s ease;
+}
+.confirm-box.show{
+  display:flex;
+}
+@keyframes slide-up{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.btn{
+  flex:1;
+  padding:16px;
+  border-radius:14px;
+  border:none;
+  font-size:15px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all 0.2s ease;
+  font-family:'Space Grotesk', sans-serif;
+}
+.btn-confirm{
+  background:linear-gradient(135deg, var(--green), #00A866);
+  color:#000;
+  box-shadow:0 10px 30px rgba(0,208,132,0.3);
+}
+.btn-confirm:hover{
+  transform:translateY(-2px);
+  box-shadow:0 15px 40px rgba(0,208,132,0.4);
+}
+.btn-cancel{
+  background:var(--card);
+  color:white;
+  border:1px solid var(--border);
+  backdrop-filter:blur(10px);
+}
+.btn-cancel:hover{
+  background:var(--card-hover);
+}
+.loading-opay{
+  display:none;
+  margin-top:16px;
+  font-size:13px;
+  color:var(--text-muted);
+}
+.loading-opay.show{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+.spinner{
+  width:16px;
+  height:16px;
+  border:2px solid var(--border);
+  border-top-color:var(--green);
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
 .footer{
-  margin-top:40px;
+  margin-top:48px;
   text-align:center;
   font-size:12px;
-  color:#666;
+  color:var(--text-muted);
 }
 .footer.security{
   display:inline-flex;
@@ -150,18 +329,32 @@ h1{
   gap:6px;
   color:#888;
   margin-bottom:6px;
+  padding:8px 16px;
+  background:var(--card);
+  border-radius:999px;
+  border:1px solid var(--border);
+  backdrop-filter:blur(10px);
 }
 .footer.security svg{width:14px;height:14px}
 </style>
 </head>
 <body>
 <div class="top-bar">
-  <div class="team">Harps Tech Pay Team</div>
-  <button class="logout" onclick="logout()">Logout</button>
+  <div class="team">
+    <span class="team-dot"></span>
+    Harps Tech Pay Team
+  </div>
+  <div class="nav-group">
+    <button class="nav-btn" onclick="goDashboard()">Dashboard</button>
+    <button class="nav-btn" onclick="logout()">Logout</button>
+  </div>
 </div>
 
 <div class="container">
-  <img src="logo.png" class="logo" alt="Harps Tech Logo" onerror="this.style.display='none'">
+  <div class="logo-wrap">
+    <div class="logo-glow"></div>
+    <img src="logo.png" class="logo" alt="Harps Tech Logo" onerror="this.style.display='none'">
+  </div>
 
   <span class="badge">
     <svg fill="currentColor" viewBox="0 0 20 20"><path d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM8 15V9h4v6H8z"/></svg>
@@ -172,12 +365,27 @@ h1{
   <p class="sub">Voice-authenticated payments powered by Groq AI</p>
   <p class="bio">Tap mic and speak naturally in English, Yoruba, Hausa, or Pidgin</p>
 
-  <div class="mic-wrap">
+  <div class="mic-section">
+    <div class="mic-ring"></div>
     <button class="mic-btn" id="mic">🎤</button>
+    <div class="transcript-live" id="transcriptLive"></div>
+    <div class="confidence-bar" id="confidenceBar">
+      <div class="confidence-fill" id="confidenceFill"></div>
+    </div>
   </div>
 
   <p class="hint">"Send 5k to Seyi" • "Buy 2k airtime" • "Pay NEPA bill"</p>
-  <div class="status" id="status">Tap the mic to start</div>
+  <div class="status-card" id="status">Tap the mic to start</div>
+
+  <div class="confirm-box" id="confirmBox">
+    <button class="btn btn-confirm" onclick="createOpayLink()">Confirm & Pay</button>
+    <button class="btn btn-cancel" onclick="resetMic()">Cancel</button>
+  </div>
+
+  <div class="loading-opay" id="loadingOpay">
+    <div class="spinner"></div>
+    Creating Opay payment link...
+  </div>
 
   <div class="footer">
     <div class="security">
@@ -191,7 +399,6 @@ h1{
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCv8Wz-zkn-Xt5yNO4j8opEeMwsOGCCv_8",
   authDomain: "harps-voicepay.firebaseapp.com",
@@ -205,49 +412,54 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// IMPORTANT: Replace with your actual Render URL
 const BACKEND_URL = 'https://harps-voicepay.onrender.com';
-
 const mic = document.getElementById('mic');
 const status = document.getElementById('status');
+const confirmBox = document.getElementById('confirmBox');
+const transcriptLive = document.getElementById('transcriptLive');
+const confidenceBar = document.getElementById('confidenceBar');
+const confidenceFill = document.getElementById('confidenceFill');
+const loadingOpay = document.getElementById('loadingOpay');
 
-// Auth check
+let currentIntent = null;
+let currentUser = null;
+
 onAuthStateChanged(auth, (user) => {
   if (!user) window.location.href = '/login.html';
-  else localStorage.setItem('uid', user.uid);
+  else {
+    currentUser = user;
+    localStorage.setItem('uid', user.uid);
+  }
 });
 
-// Clear old test data
 localStorage.removeItem('harpsReply');
 
-// Nigerian male voice TTS
+// Unlock iOS TTS
+let voicesLoaded = false;
+function unlockSpeech() {
+  if (voicesLoaded) return;
+  const u = new SpeechSynthesisUtterance('');
+  speechSynthesis.speak(u);
+  voicesLoaded = true;
+}
+
 function speakHarps(text, language = 'en') {
   return new Promise((resolve) => {
+    unlockSpeech();
     speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = language === 'yo'? 'yo-NG' : language === 'ha'? 'ha-NG' : language === 'ig'? 'ig-NG' : 'en-NG';
-    utterance.pitch = 0.8;
-    utterance.rate = 0.95;
-    utterance.volume = 1;
-    utterance.onend = resolve;
-    utterance.onerror = resolve;
-    speechSynthesis.speak(utterance);
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-NG';
+      utterance.pitch = 0.8;
+      utterance.rate = 0.95;
+      utterance.volume = 1;
+      utterance.onend = resolve;
+      utterance.onerror = resolve;
+      speechSynthesis.speak(utterance);
+    }, 100);
   });
 }
 
-// Check saved recipients
-function getSavedRecipient(name) {
-  const saved = JSON.parse(localStorage.getItem('harps_recipients') || '{}');
-  return saved[name.toLowerCase()];
-}
-
-function saveRecipient(name, bank, accountNumber) {
-  const saved = JSON.parse(localStorage.getItem('harps_recipients') || '{}');
-  saved[name.toLowerCase()] = { bank, accountNumber };
-  localStorage.setItem('harps_recipients', JSON.stringify(saved));
-}
-
-// Speech recognition setup
 let recognition;
 let isListening = false;
 
@@ -256,69 +468,84 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   recognition = new SpeechRecognition();
   recognition.lang = 'en-NG';
   recognition.continuous = false;
-  recognition.interimResults = false;
+  recognition.interimResults = true; // Show live transcript
 
   recognition.onstart = () => {
     isListening = true;
+    unlockSpeech();
     mic.classList.add('recording');
-    status.innerText = 'Listening... Speak now';
+    status.innerText = 'Listening... Speak clearly';
+    status.classList.add('active');
+    confirmBox.classList.remove('show');
+    transcriptLive.classList.add('show');
+    confidenceBar.classList.remove('show');
   };
 
   recognition.onend = () => {
     isListening = false;
     mic.classList.remove('recording');
+    transcriptLive.classList.remove('show');
   };
 
   recognition.onresult = async (e) => {
-    const text = e.results[0][0].transcript;
-    status.innerText = `Processing: "${text}"`;
+    let interim = '';
+    let final = '';
 
-    try{
-      const res = await fetch(BACKEND_URL + '/parse', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({transcript:text})
-      });
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const transcript = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += transcript;
+      else interim += transcript;
+    }
 
-      if (!res.ok) throw new Error('Server error ' + res.status);
-      const data = await res.json();
+    transcriptLive.innerText = final || interim;
 
-      // Check if recipient exists in saved list
-      if (data.intent === 'transfer' && data.recipient) {
-        const savedRecipient = getSavedRecipient(data.recipient);
-        if (savedRecipient) {
-          data.recipient_bank = savedRecipient.bank;
-          data.recipient_account = savedRecipient.accountNumber;
-          status.innerText = `Found saved: ${data.recipient} - ${savedRecipient.bank}`;
+    if (final) {
+      status.innerText = `Processing: "${final}"`;
+      status.classList.add('active');
+
+      try{
+        const res = await fetch(BACKEND_URL + '/parse', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({transcript:final})
+        });
+
+        if (!res.ok) throw new Error('Server error ' + res.status);
+        const data = await res.json();
+        console.log('Backend returned:', data);
+
+        currentIntent = data;
+
+        // Show confidence
+        confidenceBar.classList.add('show');
+        confidenceFill.style.width = (data.confidence * 100) + '%';
+
+        status.innerText = data.response;
+        await speakHarps(data.response, data.language_detected);
+
+        // Show confirm buttons only if we understood it well
+        if (!data.needs_confirmation && data.intent === 'transfer' && data.amount > 0) {
+          confirmBox.classList.add('show');
+        } else {
+          status.innerText = data.response + ' Tap mic to try again.';
         }
+
+      }catch(err){
+        console.error('Fetch error:', err);
+        status.innerText = 'Error: Cannot reach server. Check connection.';
+        await speakHarps('Sorry, network error. Try again.', 'en');
       }
-
-      // Speak the response from /parse
-      status.innerText = data.response || 'Processing...';
-      await speakHarps(data.response, data.language_detected);
-
-      // Save and redirect to flow
-      localStorage.setItem('intent', JSON.stringify(data));
-      localStorage.setItem('last_transcript', text);
-
-      setTimeout(() => {
-        window.location.href = '/flow.html';
-      }, 1500);
-
-    }catch(err){
-      console.error('Fetch error:', err);
-      status.innerText = 'Error: Cannot reach server. Check Render logs.';
-      await speakHarps('Sorry, I cannot connect to the server right now', 'en');
     }
   };
 
   recognition.onerror = (e) => {
     isListening = false;
     mic.classList.remove('recording');
+    transcriptLive.classList.remove('show');
     if (e.error === 'no-speech') {
       status.innerText = 'No speech detected. Tap mic again.';
     } else if (e.error === 'not-allowed') {
-      status.innerText = 'Mic permission denied. Enable in browser settings.';
+      status.innerText = 'Mic permission denied. Enable in Settings > Safari > Microphone';
     } else if (e.error!== 'aborted') {
       status.innerText = 'Mic error: ' + e.error;
     }
@@ -334,13 +561,68 @@ mic.onclick = () => {
     recognition.stop();
     return;
   }
-  speechSynthesis.cancel();
+  unlockSpeech();
   try {
     recognition.start();
   } catch (e) {
     console.log('Recognition start error:', e);
     status.innerText = 'Tap again to restart mic';
   }
+};
+
+window.createOpayLink = async () => {
+  if (!currentIntent ||!currentUser) return;
+
+  confirmBox.classList.remove('show');
+  loadingOpay.classList.add('show');
+  status.innerText = 'Generating secure Opay payment link...';
+
+  try {
+    const res = await fetch(BACKEND_URL + '/create-opay-link', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        amount: currentIntent.amount,
+        recipient: currentIntent.recipient,
+        narration: `VoicePay to ${currentIntent.recipient}`,
+        userId: currentUser.uid
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.success && data.paymentUrl) {
+      await speakHarps(`Opening Opay. Just enter your PIN to complete.`, 'en');
+      status.innerText = 'Redirecting to Opay...';
+
+      // Save for flow.html if needed
+      localStorage.setItem('intent', JSON.stringify(currentIntent));
+      localStorage.setItem('opay_reference', data.reference);
+
+      setTimeout(() => {
+        window.location.href = data.paymentUrl; // Opay link - amount+recipient prefilled
+      }, 1000);
+    } else {
+      throw new Error(data.error || 'Failed to create link');
+    }
+  } catch (err) {
+    console.error('Opay link error:', err);
+    loadingOpay.classList.remove('show');
+    status.innerText = 'Failed to create Opay link. Try again.';
+    await speakHarps('Sorry, could not create payment link', 'en');
+  }
+};
+
+window.resetMic = () => {
+  confirmBox.classList.remove('show');
+  loadingOpay.classList.remove('show');
+  status.innerText = 'Tap the mic to start';
+  status.classList.remove('active');
+  currentIntent = null;
+};
+
+window.goDashboard = () => {
+  window.location.href = '/dashboard.html';
 };
 
 window.logout = async () => {
@@ -350,7 +632,6 @@ window.logout = async () => {
 };
 </script>
 
-<!-- Service Worker Registration -->
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
