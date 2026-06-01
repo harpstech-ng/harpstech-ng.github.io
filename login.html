@@ -126,6 +126,11 @@ input:focus{
   opacity:0.6;
   cursor:not-allowed;
 }
+.btn-secondary{
+  background:rgba(255,255,255,0.08);
+  color:white;
+  border:1px solid var(--border);
+}
 .link{
   color:var(--green);
   font-size:14px;
@@ -167,6 +172,86 @@ input:focus{
 }
 .error{background:rgba(255,59,48,0.18);border:1px solid #ff3b30}
 .success{background:rgba(0,208,132,0.18);border:1px solid var(--green)}
+.student-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 12px;
+  background:rgba(255,149,0,0.15);
+  border:1px solid rgba(255,149,0,0.3);
+  color:#ff9500;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:600;
+  margin-bottom:12px;
+}
+.voice-box{
+  background:rgba(0,208,132,0.05);
+  border:2px dashed rgba(0,208,132,0.3);
+  border-radius:16px;
+  padding:20px;
+  text-align:center;
+  margin-bottom:14px;
+}
+.voice-btn{
+  width:90px;
+  height:90px;
+  border-radius:50%;
+  background:linear-gradient(135deg, var(--green), #00A866);
+  border:none;
+  font-size:36px;
+  cursor:pointer;
+  margin:0 auto 10px;
+  display:block;
+  box-shadow:0 0 40px rgba(0,208,132,0.4);
+}
+.voice-btn:active{transform:scale(0.92)}
+.voice-btn.recording{
+  background:linear-gradient(135deg, #ff3b30, #d62828);
+  animation:pulse 1s infinite;
+}
+@keyframes pulse{
+ 0%,100%{box-shadow:0 0 40px rgba(255,59,48,0.6)}
+ 50%{box-shadow:0 0 80px rgba(255,59,48,0.9)}
+}
+.voice-status{
+  font-size:13px;
+  color:#a8a8a8;
+  margin-bottom:8px;
+}
+.voice-dots{
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  margin-top:10px;
+}
+.voice-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--border);
+}
+.voice-dot.active{
+  background:var(--green);
+  box-shadow:0 0 10px rgba(0,208,132,0.5);
+}
+.step-indicator{
+  display:flex;
+  gap:6px;
+  justify-content:center;
+  margin-bottom:16px;
+}
+.step-dot{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--border);
+}
+.step-dot.active{
+  background:var(--green);
+  width:20px;
+  border-radius:3px;
+}
 </style>
 </head>
 <body>
@@ -185,16 +270,53 @@ input:focus{
   <div class="error" id="error"></div>
   <div class="success" id="success"></div>
   
-  <input type="email" id="email" placeholder="Email" autocomplete="email">
-  <div class="input-group" id="passGroup">
-    <input type="password" id="password" placeholder="Password" autocomplete="current-password">
-    <button type="button" class="eye-btn" onclick="togglePass()" id="eyeBtn">👁️</button>
+  <!-- Step Indicator for Signup -->
+  <div class="step-indicator" id="stepIndicator" style="display:none">
+    <div class="step-dot active" id="sdot1"></div>
+    <div class="step-dot" id="sdot2"></div>
+    <div class="step-dot" id="sdot3"></div>
   </div>
   
-  <button class="btn" id="mainBtn" onclick="handleAuth()">Login</button>
-  <a href="#" class="link" onclick="forgotPass()">Forgot Password?</a>
+  <!-- STEP 1: Email/Password -->
+  <div id="stepAuth">
+    <input type="email" id="email" placeholder="Email" autocomplete="email">
+    <div class="input-group" id="passGroup">
+      <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+      <button type="button" class="eye-btn" onclick="togglePass()" id="eyeBtn">👁️</button>
+    </div>
+    <button class="btn" id="mainBtn" onclick="handleAuth()">Login</button>
+    <a href="#" class="link" onclick="forgotPass()">Forgot Password?</a>
+  </div>
+
+  <!-- STEP 2: NIN Verification - Only for Signup -->
+  <div id="stepNIN" style="display:none">
+    <div class="student-badge" id="studentBadge" style="display:none">
+      🎓 Student Account - ₦10,000 daily limit
+    </div>
+    <input type="text" id="fullName" placeholder="Full Name (as on NIN)" maxlength="50">
+    <input type="text" id="nin" placeholder="NIN (11 digits)" maxlength="11" style="margin-top:14px">
+    <button class="btn" onclick="verifyNIN()" id="ninBtn">Verify NIN</button>
+    <button class="btn btn-secondary" onclick="backToAuth()" style="margin-top:8px">Back</button>
+  </div>
+
+  <!-- STEP 3: Voice Verification - Only for Signup -->
+  <div id="stepVoice" style="display:none">
+    <div class="voice-box">
+      <button class="voice-btn" id="voiceBtn" onclick="recordVoice()">🎤</button>
+      <div class="voice-status" id="voiceStatus">Tap to record phrase 1 of 3</div>
+      <div class="voice-dots">
+        <div class="voice-dot" id="vdot1"></div>
+        <div class="voice-dot" id="vdot2"></div>
+        <div class="voice-dot" id="vdot3"></div>
+      </div>
+    </div>
+    <div style="text-align:center;font-style:italic;color:var(--green);font-size:13px;margin-bottom:14px" id="voicePhrase">
+      Say: "My voice is my password"
+    </div>
+    <button class="btn" onclick="completeSignup()" id="finishBtn" disabled>Complete Setup</button>
+  </div>
   
-  <div class="toggle">
+  <div class="toggle" id="toggleWrap">
     <span id="toggleText">Don't have an account? </span>
     <span onclick="toggleMode()">Sign Up</span>
   </div>
@@ -225,8 +347,22 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const BACKEND_URL = 'https://harps-voicepay.onrender.com';
+
 let isLogin = true;
 let showPassword = false;
+let signupStep = 1;
+let voiceRecordings = [];
+let currentPhrase = 0;
+let userAge = 0;
+let isStudent = false;
+let tempUserData = {};
+
+const phrases = [
+  "My voice is my password",
+  "Harps VoicePay secure",
+  "Send money with my voice"
+];
 
 // Auto redirect if logged in
 onAuthStateChanged(auth, (user) => {
@@ -235,10 +371,13 @@ onAuthStateChanged(auth, (user) => {
 
 window.toggleMode = () => {
   isLogin = !isLogin;
+  signupStep = 1;
   document.getElementById('title').innerText = isLogin ? 'Harps VoicePay' : 'Create Account';
   document.getElementById('subtitle').innerText = isLogin ? 'Speak to send money, fast and secure' : 'Join Harps VoicePay powered by Opay';
-  document.getElementById('mainBtn').innerText = isLogin ? 'Login' : 'Sign Up';
+  document.getElementById('mainBtn').innerText = isLogin ? 'Login' : 'Continue';
   document.getElementById('toggleText').innerText = isLogin ? "Don't have an account? " : "Already have an account? ";
+  document.getElementById('stepIndicator').style.display = isLogin ? 'none' : 'flex';
+  showStep('stepAuth');
 };
 
 window.togglePass = () => {
@@ -254,6 +393,26 @@ window.forgotPass = () => {
   document.getElementById('mainBtn').innerText = 'Send Reset Link';
   document.getElementById('mainBtn').onclick = resetPass;
   document.getElementById('subtitle').innerText = 'Enter your email to reset password';
+};
+
+function showStep(stepId) {
+  ['stepAuth','stepNIN','stepVoice'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById(stepId).style.display = 'block';
+  
+  // Update step dots
+  if (!isLogin) {
+    ['sdot1','sdot2','sdot3'].forEach((id,i) => {
+      document.getElementById(id).classList.toggle('active', i < signupStep);
+    });
+  }
+}
+
+window.backToAuth = () => {
+  signupStep = 1;
+  showStep('stepAuth');
+  document.getElementById('stepIndicator').style.display = 'none';
 };
 
 window.handleAuth = async () => {
@@ -272,14 +431,152 @@ window.handleAuth = async () => {
       localStorage.setItem('uid',user.user.uid);
       window.location.href='/index.html';
     }else{
-      await createUserWithEmailAndPassword(auth,email,pass);
-      showSuccess('Account created! You can login now');
-      toggleMode();
+      // Signup flow - go to NIN step
+      tempUserData = {email, pass};
+      signupStep = 2;
+      showStep('stepNIN');
+      document.getElementById('stepIndicator').style.display = 'flex';
     }
   }catch(e){
     showError(getErrorMsg(e.code));
     btn.disabled = false;
-    btn.innerText = isLogin ? 'Login' : 'Sign Up';
+    btn.innerText = isLogin ? 'Login' : 'Continue';
+  }
+};
+
+window.verifyNIN = async () => {
+  const nin = document.getElementById('nin').value.trim();
+  const fullName = document.getElementById('fullName').value.trim();
+  const btn = document.getElementById('ninBtn');
+
+  if (!nin || nin.length !== 11) {
+    showError('Enter valid 11-digit NIN');
+    return;
+  }
+  if (!fullName) {
+    showError('Enter your full name');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = 'Verifying...';
+
+  try {
+    // Call backend to verify NIN - mock logic: if NIN starts with 1 = under 18
+    const res = await fetch(BACKEND_URL + '/verify-nin', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({nin, fullName})
+    });
+    const data = await res.json();
+    
+    userAge = data.age || (nin.startsWith('1') ? 16 : 25);
+    isStudent = userAge < 18;
+    
+    if (isStudent) {
+      document.getElementById('studentBadge').style.display = 'inline-flex';
+      showSuccess('Student account detected. ₦10,000 daily limit applies.');
+    } else {
+      showSuccess('NIN verified successfully!');
+    }
+
+    tempUserData.nin = nin;
+    tempUserData.fullName = fullName;
+    tempUserData.isStudent = isStudent;
+
+    setTimeout(() => {
+      signupStep = 3;
+      showStep('stepVoice');
+    }, 1500);
+
+  } catch (err) {
+    showError('NIN verification failed. Check details.');
+    btn.disabled = false;
+    btn.innerText = 'Verify NIN';
+  }
+};
+
+window.recordVoice = async () => {
+  const btn = document.getElementById('voiceBtn');
+  const status = document.getElementById('voiceStatus');
+
+  if (btn.classList.contains('recording')) return;
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mediaRecorder = new MediaRecorder(stream);
+    const chunks = [];
+
+    mediaRecorder.ondataavailable = e => chunks.push(e.data);
+    mediaRecorder.onstop = async () => {
+      const blob = new Blob(chunks, { type: 'audio/webm' });
+      voiceRecordings.push(blob);
+
+      document.getElementById(`vdot${currentPhrase + 1}`).classList.add('active');
+      currentPhrase++;
+
+      if (currentPhrase < 3) {
+        status.textContent = `Tap to record phrase ${currentPhrase + 1} of 3`;
+        document.getElementById('voicePhrase').textContent = `Say: "${phrases[currentPhrase]}"`;
+      } else {
+        status.textContent = 'Voice ID captured! ✅';
+        document.getElementById('finishBtn').disabled = false;
+        btn.style.display = 'none';
+      }
+
+      stream.getTracks().forEach(track => track.stop());
+    };
+
+    mediaRecorder.start();
+    btn.classList.add('recording');
+    status.textContent = 'Recording... Speak now';
+
+    setTimeout(() => {
+      mediaRecorder.stop();
+      btn.classList.remove('recording');
+    }, 3000);
+
+  } catch (err) {
+    showError('Microphone access denied. Enable in browser settings.');
+  }
+};
+
+window.completeSignup = async () => {
+  const btn = document.getElementById('finishBtn');
+  btn.disabled = true;
+  btn.innerText = 'Creating account...';
+
+  try {
+    // Create Firebase user
+    const userCred = await createUserWithEmailAndPassword(auth, tempUserData.email, tempUserData.pass);
+    const uid = userCred.user.uid;
+
+    // Upload voice + NIN data to backend
+    const formData = new FormData();
+    voiceRecordings.forEach((blob, i) => {
+      formData.append(`voice${i}`, blob);
+    });
+    formData.append('userId', uid);
+    formData.append('email', tempUserData.email);
+    formData.append('nin', tempUserData.nin);
+    formData.append('fullName', tempUserData.fullName);
+    formData.append('isStudent', isStudent);
+
+    await fetch(BACKEND_URL + '/complete-signup', {
+      method: 'POST',
+      body: formData
+    });
+
+    localStorage.setItem('uid', uid);
+    localStorage.setItem('isStudent', isStudent);
+    showSuccess('Account created! Redirecting...');
+    setTimeout(() => window.location.href = '/index.html', 1500);
+
+  } catch (err) {
+    showError('Failed to create account. Try again.');
+    btn.disabled = false;
+    btn.innerText = 'Complete Setup';
+    console.error(err);
   }
 };
 
