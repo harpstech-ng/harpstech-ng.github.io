@@ -252,6 +252,31 @@ input:focus{
   width:20px;
   border-radius:3px;
 }
+.checkbox-wrap{
+  margin-top:16px;
+  padding:16px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border);
+  border-radius:12px;
+}
+.checkbox-label{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  cursor:pointer;
+  font-size:14px;
+}
+.checkbox-label input[type="checkbox"]{
+  width:18px;
+  height:18px;
+  accent-color:var(--green);
+}
+.checkbox-hint{
+  font-size:12px;
+  color:#888;
+  margin-top:8px;
+  margin-left:28px;
+}
 </style>
 </head>
 <body>
@@ -288,14 +313,24 @@ input:focus{
     <a href="#" class="link" onclick="forgotPass()">Forgot Password?</a>
   </div>
 
-  <!-- STEP 2: NIN Verification - Only for Signup -->
-  <div id="stepNIN" style="display:none">
+  <!-- STEP 2: Age Declaration - Replaced NIN -->
+  <div id="stepAge" style="display:none">
     <div class="student-badge" id="studentBadge" style="display:none">
       🎓 Student Account - ₦10,000 daily limit
     </div>
-    <input type="text" id="fullName" placeholder="Full Name (as on NIN)" maxlength="50">
-    <input type="text" id="nin" placeholder="NIN (11 digits)" maxlength="11" style="margin-top:14px">
-    <button class="btn" onclick="verifyNIN()" id="ninBtn">Verify NIN</button>
+    <input type="text" id="fullName" placeholder="Full Name" maxlength="50">
+    
+    <div class="checkbox-wrap">
+      <label class="checkbox-label">
+        <input type="checkbox" id="ageCheck" checked onchange="toggleAge()">
+        <span>I confirm I am 18 years or older</span>
+      </label>
+      <p class="checkbox-hint">
+        Uncheck if under 18. Student accounts have ₦10,000 daily limits for safety.
+      </p>
+    </div>
+
+    <button class="btn" onclick="confirmAge()" id="ageBtn">Continue</button>
     <button class="btn btn-secondary" onclick="backToAuth()" style="margin-top:8px">Back</button>
   </div>
 
@@ -396,7 +431,7 @@ window.forgotPass = () => {
 };
 
 function showStep(stepId) {
-  ['stepAuth','stepNIN','stepVoice'].forEach(id => {
+  ['stepAuth','stepAge','stepVoice'].forEach(id => {
     document.getElementById(id).style.display = 'none';
   });
   document.getElementById(stepId).style.display = 'block';
@@ -431,10 +466,10 @@ window.handleAuth = async () => {
       localStorage.setItem('uid',user.user.uid);
       window.location.href='/index.html';
     }else{
-      // Signup flow - go to NIN step
+      // Signup flow - go to Age step
       tempUserData = {email, pass};
       signupStep = 2;
-      showStep('stepNIN');
+      showStep('stepAge');
       document.getElementById('stepIndicator').style.display = 'flex';
     }
   }catch(e){
@@ -444,55 +479,39 @@ window.handleAuth = async () => {
   }
 };
 
-window.verifyNIN = async () => {
-  const nin = document.getElementById('nin').value.trim();
+window.confirmAge = () => {
   const fullName = document.getElementById('fullName').value.trim();
-  const btn = document.getElementById('ninBtn');
+  const isOver18 = document.getElementById('ageCheck').checked;
 
-  if (!nin || nin.length !== 11) {
-    showError('Enter valid 11-digit NIN');
-    return;
-  }
   if (!fullName) {
     showError('Enter your full name');
     return;
   }
 
-  btn.disabled = true;
-  btn.innerText = 'Verifying...';
+  tempUserData.fullName = fullName;
+  tempUserData.isStudent = !isOver18;
+  userAge = isOver18? 25 : 16;
+  isStudent = !isOver18;
 
-  try {
-    // Call backend to verify NIN - mock logic: if NIN starts with 1 = under 18
-    const res = await fetch(BACKEND_URL + '/verify-nin', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({nin, fullName})
-    });
-    const data = await res.json();
-    
-    userAge = data.age || (nin.startsWith('1') ? 16 : 25);
-    isStudent = userAge < 18;
-    
-    if (isStudent) {
-      document.getElementById('studentBadge').style.display = 'inline-flex';
-      showSuccess('Student account detected. ₦10,000 daily limit applies.');
-    } else {
-      showSuccess('NIN verified successfully!');
-    }
+  if (isStudent) {
+    document.getElementById('studentBadge').style.display = 'inline-flex';
+    showSuccess('Student account - ₦10,000 daily limit applies');
+  } else {
+    showSuccess('Age confirmed. Proceeding to voice setup.');
+  }
 
-    tempUserData.nin = nin;
-    tempUserData.fullName = fullName;
-    tempUserData.isStudent = isStudent;
+  setTimeout(() => {
+    signupStep = 3;
+    showStep('stepVoice');
+  }, 1000);
+};
 
-    setTimeout(() => {
-      signupStep = 3;
-      showStep('stepVoice');
-    }, 1500);
-
-  } catch (err) {
-    showError('NIN verification failed. Check details.');
-    btn.disabled = false;
-    btn.innerText = 'Verify NIN';
+window.toggleAge = () => {
+  const isOver18 = document.getElementById('ageCheck').checked;
+  if (!isOver18) {
+    document.getElementById('studentBadge').style.display = 'inline-flex';
+  } else {
+    document.getElementById('studentBadge').style.display = 'none';
   }
 };
 
@@ -551,14 +570,13 @@ window.completeSignup = async () => {
     const userCred = await createUserWithEmailAndPassword(auth, tempUserData.email, tempUserData.pass);
     const uid = userCred.user.uid;
 
-    // Upload voice + NIN data to backend
+    // Upload voice data to backend
     const formData = new FormData();
     voiceRecordings.forEach((blob, i) => {
-      formData.append(`voice${i}`, blob);
+      formData.append(`voice`, blob);
     });
     formData.append('userId', uid);
     formData.append('email', tempUserData.email);
-    formData.append('nin', tempUserData.nin);
     formData.append('fullName', tempUserData.fullName);
     formData.append('isStudent', isStudent);
 
