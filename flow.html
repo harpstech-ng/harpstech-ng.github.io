@@ -96,8 +96,8 @@ h2{
   margin:12px 0;
   font-size:15px;
 }
-.row .label{color:#aaa}
-.row .value{font-weight:600}
+.row.label{color:#aaa}
+.row.value{font-weight:600}
 .big-amount{
   font-size:36px;
   font-weight:700;
@@ -150,14 +150,14 @@ input:focus{
   font-size:12px;
   color:#666;
 }
-.footer .security{
+.footer.security{
   display:inline-flex;
   align-items:center;
   gap:6px;
   color:#888;
   margin-bottom:6px;
 }
-.footer .security svg{width:14px;height:14px}
+.footer.security svg{width:14px;height:14px}
 .loader{
   display:none;
   width:20px;
@@ -179,6 +179,19 @@ input:focus{
   margin:12px 0;
   min-height:20px;
 }
+.student-badge-flow{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 12px;
+  background:rgba(255,149,0,0.15);
+  border:1px solid rgba(255,149,0,0.3);
+  color:#ff9500;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:600;
+  margin-bottom:14px;
+}
 </style>
 </head>
 <body>
@@ -197,6 +210,11 @@ input:focus{
 
 <div class="warning" id="warning">
   ⚠️ Voice stress detected. Extra verification required for security.
+</div>
+
+<!-- Student Badge - Shows only for students -->
+<div class="student-badge-flow" id="studentBadgeFlow" style="display:none">
+  🎓 Student Account - ₦10,000 transaction limit
 </div>
 
 <div class="card">
@@ -272,20 +290,64 @@ const intent = JSON.parse(localStorage.getItem('intent') || '{}');
 if(!intent.amount) window.location.href='/index.html';
 
 // Auth check
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) window.location.href = '/login.html';
-  else window.currentUser = user;
+  else {
+    window.currentUser = user;
+    // Check if user is student
+    try {
+      const userData = await fetch(BACKEND_URL + '/get-user/' + user.uid).then(r=>r.json());
+      if (userData.isStudent) {
+        document.getElementById('studentBadgeFlow').style.display = 'inline-flex';
+      }
+    } catch (e) {
+      console.log('Could not fetch user data');
+    }
+  }
 });
 
-// Voice TTS
+// UPGRADED: Multi-language TTS with proper Yoruba/Hausa/Igbo support
+let availableVoices = [];
+function loadVoices() {
+  availableVoices = speechSynthesis.getVoices();
+}
+speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
 function speakHarps(text) {
   return new Promise((resolve) => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = intent.language_detected === 'yo'? 'yo-NG' : 'en-NG';
-    utterance.pitch = 0.8;
-    utterance.rate = 0.95;
-    utterance.onend = resolve;
-    speechSynthesis.speak(utterance);
+    speechSynthesis.cancel();
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(text);
+
+      // Language mapping - iOS/Android support varies
+      const langMap = {
+        'en': 'en-NG',
+        'yo': 'yo-NG', // Yoruba
+        'ha': 'ha-NG', // Hausa
+        'ig': 'ig-NG', // Igbo
+        'pcm': 'en-NG' // Pidgin fallback to Nigerian English
+      };
+
+      const targetLang = langMap[intent.language_detected] || 'en-NG';
+      utterance.lang = targetLang;
+
+      // Find best voice for the language
+      const langVoice = availableVoices.find(v => v.lang.startsWith(targetLang.split('-')[0]));
+      if (langVoice) utterance.voice = langVoice;
+
+      utterance.pitch = 0.8;
+      utterance.rate = 0.95;
+      utterance.volume = 1;
+      utterance.onend = resolve;
+      utterance.onerror = () => {
+        // Fallback to English if Yoruba fails
+        utterance.lang = 'en-NG';
+        speechSynthesis.speak(utterance);
+        resolve();
+      };
+      speechSynthesis.speak(utterance);
+    }, 100);
   });
 }
 
@@ -327,8 +389,8 @@ if (intent.intent === 'transfer' && intent.recipient) {
     document.getElementById('bankCard').classList.remove('hidden');
     document.getElementById('confirmCard').classList.add('hidden');
     document.getElementById('bank').innerText = 'Not saved';
-    
-    // Harps asks for bank
+
+    // Harps asks for bank - in detected language
     speakHarps(`I no see ${intent.recipient} account. Which bank ${intent.recipient} dey use?`);
   }
 } else {
@@ -363,11 +425,11 @@ window.saveBankDetails = async function() {
     }
     recipientAccount = account;
     saveRecipient(intent.recipient, recipientBank, recipientAccount);
-    
+
     document.getElementById('bankCard').classList.add('hidden');
     document.getElementById('confirmCard').classList.remove('hidden');
     document.getElementById('bank').innerText = recipientBank;
-    
+
     await speakHarps(`Saved. ${intent.recipient} for ${recipientBank}. Ready to pay ₦${intent.amount}`);
   }
 }
@@ -379,7 +441,7 @@ window.proceedToOpay = async function proceedToOpay(){
   const harpsStatus = document.getElementById('harpsStatus');
 
   // Check if bank details needed
-  if (intent.intent === 'transfer' && !recipientBank) {
+  if (intent.intent === 'transfer' &&!recipientBank) {
     alert('Please add recipient bank details first');
     return;
   }
