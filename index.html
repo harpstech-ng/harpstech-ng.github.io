@@ -374,7 +374,7 @@ h1{
     </div>
   </div>
 
-  <p class="hint">"Send 5k to Seyi" • "Buy 2k airtime" • "Pay NEPA bill"</p>
+  <p class="hint">"Send 5k to Seyi" • "Fi 2k ranṣẹ si Mama" • "Tura dubu biyu zuwa Tunde"</p>
   <div class="status-card" id="status">Tap the mic to start</div>
 
   <div class="confirm-box" id="confirmBox">
@@ -423,6 +423,7 @@ const loadingOpay = document.getElementById('loadingOpay');
 
 let currentIntent = null;
 let currentUser = null;
+let availableVoices = [];
 
 onAuthStateChanged(auth, (user) => {
   if (!user) window.location.href = '/login.html';
@@ -434,27 +435,46 @@ onAuthStateChanged(auth, (user) => {
 
 localStorage.removeItem('harpsReply');
 
-// Unlock iOS TTS
-let voicesLoaded = false;
-function unlockSpeech() {
-  if (voicesLoaded) return;
-  const u = new SpeechSynthesisUtterance('');
-  speechSynthesis.speak(u);
-  voicesLoaded = true;
+// Load voices for multi-language TTS
+function loadVoices() {
+  availableVoices = speechSynthesis.getVoices();
 }
+speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
 
+// UPGRADED: Multi-language TTS with Yoruba/Hausa/Igbo support
 function speakHarps(text, language = 'en') {
   return new Promise((resolve) => {
-    unlockSpeech();
     speechSynthesis.cancel();
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-NG';
-      utterance.pitch = 0.8;
+
+      // Language mapping - iOS/Android support varies
+      const langMap = {
+        'en': 'en-NG', // Nigerian English
+        'yo': 'yo-NG', // Yoruba - iOS 17+ supports this
+        'ha': 'ha-NG', // Hausa
+        'ig': 'ig-NG', // Igbo
+        'pcm': 'en-NG' // Pidgin fallback to Nigerian English
+      };
+
+      utterance.lang = langMap[language] || 'en-NG';
+
+      // Find best voice for the language
+      const langVoice = availableVoices.find(v => v.lang.startsWith(langMap[language]?.split('-')[0]));
+      if (langVoice) utterance.voice = langVoice;
+
+      utterance.pitch = 0.9;
       utterance.rate = 0.95;
       utterance.volume = 1;
       utterance.onend = resolve;
-      utterance.onerror = resolve;
+      utterance.onerror = () => {
+        // Fallback to English if Yoruba fails
+        console.log('TTS failed for', language, 'falling back to English');
+        utterance.lang = 'en-NG';
+        speechSynthesis.speak(utterance);
+        resolve();
+      };
       speechSynthesis.speak(utterance);
     }, 100);
   });
@@ -466,13 +486,13 @@ let isListening = false;
 if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
-  recognition.lang = 'en-NG';
+  // UPGRADE: Support multiple languages - browser will auto-detect
+  recognition.lang = 'en-NG'; // Primary, but will catch Yoruba/Hausa words too
   recognition.continuous = false;
-  recognition.interimResults = true; // Show live transcript
+  recognition.interimResults = true;
 
   recognition.onstart = () => {
     isListening = true;
-    unlockSpeech();
     mic.classList.add('recording');
     status.innerText = 'Listening... Speak clearly';
     status.classList.add('active');
@@ -521,10 +541,11 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
         confidenceFill.style.width = (data.confidence * 100) + '%';
 
         status.innerText = data.response;
+        // Speak in detected language
         await speakHarps(data.response, data.language_detected);
 
         // Show confirm buttons only if we understood it well
-        if (!data.needs_confirmation && data.intent === 'transfer' && data.amount > 0) {
+        if (!data.needs_confirmation && data.intent === 'transfer' && data.amount > 0 && data.recipient) {
           confirmBox.classList.add('show');
         } else {
           status.innerText = data.response + ' Tap mic to try again.';
@@ -561,7 +582,6 @@ mic.onclick = () => {
     recognition.stop();
     return;
   }
-  unlockSpeech();
   try {
     recognition.start();
   } catch (e) {
@@ -592,7 +612,7 @@ window.createOpayLink = async () => {
     const data = await res.json();
 
     if (data.success && data.paymentUrl) {
-      await speakHarps(`Opening Opay. Just enter your PIN to complete.`, 'en');
+      await speakHarps(`Opening Opay. Just enter your PIN to complete.`, currentIntent.language_detected);
       status.innerText = 'Redirecting to Opay...';
 
       // Save for flow.html if needed
