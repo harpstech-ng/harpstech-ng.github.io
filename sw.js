@@ -5,7 +5,7 @@ const urlsToCache = [
   '/index.html',
   '/flow.html',
   '/dashboard.html',
-  '/logo.png'
+  '/IMG_6416.jpeg'
 ];
 
 // Install - cache files
