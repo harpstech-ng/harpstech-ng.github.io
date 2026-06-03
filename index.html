@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Harps VoicePay | Speak to Pay</title>
+<title>VoicePay | Speak to Pay</title>
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#00D084">
@@ -27,8 +27,9 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{
   background:
-    radial-gradient(1000px 600px at 50% -10%, rgba(0,208,132,0.15), transparent 60%),
-    radial-gradient(800px 400px at 80% 100%, rgba(138,43,226,0.08), transparent 50%),
+    radial-gradient(1000px 600px at 50% -10%, rgba(0,208,132,0.18), transparent 60%),
+    radial-gradient(800px 400px at 20% 100%, rgba(138,43,226,0.1), transparent 50%),
+    radial-gradient(600px 300px at 100% 50%, rgba(0,208,132,0.08), transparent 40%),
     var(--bg);
   color:white;
   font-family:'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -71,8 +72,8 @@ body{
   animation:pulse-dot 2s infinite;
 }
 @keyframes pulse-dot{
- 0%,100%{opacity:1}
- 50%{opacity:0.4}
+ 0%,100%{opacity:1;transform:scale(1)}
+ 50%{opacity:0.4;transform:scale(0.8)}
 }
 .nav-group{
   display:flex;
@@ -104,120 +105,134 @@ body{
 .logo-wrap{
   position:relative;
   display:inline-block;
-  margin-bottom:20px;
+  margin-bottom:24px;
 }
 .logo{
-  width:90px;
-  height:90px;
-  border-radius:24px;
-  box-shadow:0 20px 60px rgba(0,208,132,0.25);
+  width:100px;
+  height:100px;
+  border-radius:26px;
+  box-shadow:0 25px 70px rgba(0,208,132,0.35);
+  border:3px solid rgba(255,255,255,0.1);
 }
 .logo-glow{
   position:absolute;
-  inset:-20px;
+  inset:-25px;
   background:radial-gradient(circle, var(--green-glow), transparent 70%);
-  filter:blur(30px);
+  filter:blur(35px);
   z-index:-1;
   animation:glow-pulse 3s ease-in-out infinite;
 }
 @keyframes glow-pulse{
- 0%,100%{opacity:0.5;transform:scale(0.95)}
- 50%{opacity:0.8;transform:scale(1.05)}
+ 0%,100%{opacity:0.6;transform:scale(0.95)}
+ 50%{opacity:1;transform:scale(1.05)}
 }
 .badge{
   display:inline-flex;
   align-items:center;
-  gap:6px;
-  padding:6px 14px;
+  gap:8px;
+  padding:8px 16px;
   border-radius:999px;
-  background:linear-gradient(135deg, rgba(0,208,132,0.15), rgba(0,208,132,0.05));
-  border:1px solid rgba(0,208,132,0.2);
+  background:linear-gradient(135deg, rgba(0,208,132,0.18), rgba(0,208,132,0.06));
+  border:1px solid rgba(0,208,132,0.25);
   color:var(--green);
-  font-size:12px;
+  font-size:13px;
   font-weight:600;
-  margin-bottom:20px;
+  margin-bottom:24px;
   backdrop-filter:blur(10px);
+  box-shadow:0 4px 20px rgba(0,208,132,0.15);
 }
-.badge svg{width:14px;height:14px}
+.badge svg{width:16px;height:16px}
 h1{
-  font-size:36px;
+  font-size:40px;
   font-weight:700;
-  margin-bottom:10px;
-  background:linear-gradient(135deg, #fff 30%, #8A8A9E);
+  margin-bottom:12px;
+  background:linear-gradient(135deg, #fff 20%, #8A8A9E 100%);
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
   background-clip:text;
+  letter-spacing:-1px;
 }
 .sub{
   color:var(--text-muted);
-  font-size:15px;
-  margin-bottom:8px;
+  font-size:16px;
+  margin-bottom:10px;
   font-weight:400;
 }
 .bio{
   color:var(--green);
-  font-size:13px;
-  font-weight:500;
-  margin-bottom:48px;
-  letter-spacing:0.3px;
+  font-size:14px;
+  font-weight:600;
+  margin-bottom:56px;
+  letter-spacing:0.4px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
 }
+.bio svg{width:16px;height:16px}
 .mic-section{
   position:relative;
-  margin-bottom:32px;
+  margin-bottom:40px;
 }
 .mic-ring{
   position:absolute;
-  inset:-30px;
-  border:2px solid rgba(0,208,132,0.1);
+  inset:-35px;
+  border:3px solid rgba(0,208,132,0.12);
   border-radius:50%;
-  animation:ring-pulse 2s ease-out infinite;
+  animation:ring-pulse 2.5s ease-out infinite;
+}
+.mic-ring:nth-child(2){
+  animation-delay:0.5s;
+  border-color:rgba(0,208,132,0.08);
 }
 @keyframes ring-pulse{
-  0%{transform:scale(0.8);opacity:1}
-  100%{transform:scale(1.3);opacity:0}
+  0%{transform:scale(0.85);opacity:1}
+  100%{transform:scale(1.4);opacity:0}
 }
 .mic-btn{
-  width:180px;
-  height:180px;
+  width:200px;
+  height:200px;
   border-radius:50%;
   background:linear-gradient(135deg, #00D084 0%, #00A866 100%);
-  border:none;
-  font-size:70px;
+  border:4px solid rgba(255,255,255,0.15);
+  font-size:80px;
   cursor:pointer;
   box-shadow:
-    0 0 80px rgba(0,208,132,0.4),
-    0 20px 60px rgba(0,0,0,0.4),
-    inset 0 2px 0 rgba(255,255,255,0.2);
-  transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    0 0 100px rgba(0,208,132,0.5),
+    0 25px 70px rgba(0,0,0,0.5),
+    inset 0 3px 0 rgba(255,255,255,0.25);
+  transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position:relative;
   z-index:2;
 }
 .mic-btn:active{transform:scale(0.92)}
 .mic-btn.recording{
   background:linear-gradient(135deg, #ff3b30 0%, #d62828 100%);
-  animation:mic-pulse 1s ease-in-out infinite;
+  animation:mic-pulse 1.2s ease-in-out infinite;
+  border-color:rgba(255,255,255,0.2);
 }
 @keyframes mic-pulse{
- 0%,100%{box-shadow:0 0 60px rgba(255,59,48,0.6), 0 20px 60px rgba(0,0,0,0.4)}
- 50%{box-shadow:0 0 100px rgba(255,59,48,0.9), 0 20px 60px rgba(0,0,0,0.4)}
+ 0%,100%{box-shadow:0 0 80px rgba(255,59,48,0.7), 0 25px 70px rgba(0,0,0,0.5)}
+ 50%{box-shadow:0 0 120px rgba(255,59,48,1), 0 25px 70px rgba(0,0,0,0.5)}
 }
 .transcript-live{
-  min-height:24px;
-  margin-top:16px;
-  font-size:14px;
+  min-height:28px;
+  margin-top:20px;
+  font-size:15px;
   color:var(--green);
-  font-weight:500;
+  font-weight:600;
   font-style:italic;
   opacity:0;
   transition:opacity 0.3s ease;
+  line-height:1.4;
 }
 .transcript-live.show{opacity:1}
 .confidence-bar{
   width:100%;
-  height:3px;
+  height:4px;
   background:var(--card);
   border-radius:999px;
-  margin-top:12px;
+  margin-top:16px;
   overflow:hidden;
   opacity:0;
   transition:opacity 0.3s ease;
@@ -230,50 +245,53 @@ h1{
   transition:width 0.5s ease;
 }
 .hint{
-  margin-top:32px;
+  margin-top:40px;
   color:var(--text-muted);
-  font-size:13px;
+  font-size:14px;
   font-style:italic;
-  line-height:1.6;
+  line-height:1.7;
+  padding:0 20px;
 }
 .status-card{
-  margin-top:24px;
-  padding:18px;
-  border-radius:16px;
+  margin-top:28px;
+  padding:20px;
+  border-radius:18px;
   background:var(--card);
   border:1px solid var(--border);
-  font-size:14px;
-  min-height:56px;
+  font-size:15px;
+  min-height:60px;
   display:flex;
   align-items:center;
   justify-content:center;
   backdrop-filter:blur(20px);
   transition:all 0.3s ease;
+  line-height:1.5;
 }
 .status-card.active{
-  border-color:rgba(0,208,132,0.3);
-  background:rgba(0,208,132,0.05);
+  border-color:rgba(0,208,132,0.35);
+  background:rgba(0,208,132,0.08);
+  box-shadow:0 8px 30px rgba(0,208,132,0.15);
 }
 .confirm-box{
-  margin-top:16px;
+  margin-top:20px;
   display:none;
-  gap:12px;
-  animation:slide-up 0.3s ease;
+  gap:14px;
+  animation:slide-up 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .confirm-box.show{
   display:flex;
 }
 @keyframes slide-up{
-  from{opacity:0;transform:translateY(10px)}
+  from{opacity:0;transform:translateY(15px)}
   to{opacity:1;transform:translateY(0)}
 }
 .btn{
   flex:1;
-  padding:16px;
-  border-radius:14px;
+  padding:18px;
+  border-radius:16px;
   border:none;
-  font-size:15px;
-  font-weight:600;
+  font-size:16px;
+  font-weight:700;
   cursor:pointer;
   transition:all 0.2s ease;
   font-family:'Space Grotesk', sans-serif;
@@ -281,11 +299,11 @@ h1{
 .btn-confirm{
   background:linear-gradient(135deg, var(--green), #00A866);
   color:#000;
-  box-shadow:0 10px 30px rgba(0,208,132,0.3);
+  box-shadow:0 12px 35px rgba(0,208,132,0.35);
 }
 .btn-confirm:hover{
-  transform:translateY(-2px);
-  box-shadow:0 15px 40px rgba(0,208,132,0.4);
+  transform:translateY(-3px);
+  box-shadow:0 18px 50px rgba(0,208,132,0.5);
 }
 .btn-cancel{
   background:var(--card);
@@ -295,30 +313,31 @@ h1{
 }
 .btn-cancel:hover{
   background:var(--card-hover);
+  border-color:rgba(255,255,255,0.15);
 }
 .loading-opay{
   display:none;
-  margin-top:16px;
-  font-size:13px;
+  margin-top:20px;
+  font-size:14px;
   color:var(--text-muted);
 }
 .loading-opay.show{
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:8px;
+  gap:10px;
 }
 .spinner{
-  width:16px;
-  height:16px;
-  border:2px solid var(--border);
+  width:18px;
+  height:18px;
+  border:3px solid var(--border);
   border-top-color:var(--green);
   border-radius:50%;
   animation:spin 0.8s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 .footer{
-  margin-top:48px;
+  margin-top:56px;
   text-align:center;
   font-size:12px;
   color:var(--text-muted);
@@ -326,23 +345,24 @@ h1{
 .footer.security{
   display:inline-flex;
   align-items:center;
-  gap:6px;
+  gap:8px;
   color:#888;
-  margin-bottom:6px;
-  padding:8px 16px;
+  margin-bottom:8px;
+  padding:10px 18px;
   background:var(--card);
   border-radius:999px;
   border:1px solid var(--border);
   backdrop-filter:blur(10px);
+  font-weight:500;
 }
-.footer.security svg{width:14px;height:14px}
+.footer.security svg{width:15px;height:15px}
 </style>
 </head>
 <body>
 <div class="top-bar">
   <div class="team">
     <span class="team-dot"></span>
-    Harps Tech Pay Team
+    VoicePay Team
   </div>
   <div class="nav-group">
     <button class="nav-btn" onclick="goDashboard()">Dashboard</button>
@@ -353,7 +373,7 @@ h1{
 <div class="container">
   <div class="logo-wrap">
     <div class="logo-glow"></div>
-    <img src="IMG_6416.jpeg" class="logo" alt="Harps Tech Logo" onerror="this.style.display='none'">
+    <img src="IMG_6416.jpeg" class="logo" alt="VoicePay Logo" onerror="this.style.display='none'">
   </div>
 
   <span class="badge">
@@ -363,9 +383,13 @@ h1{
 
   <h1>Speak Your Payment</h1>
   <p class="sub">Voice-authenticated payments powered by Groq AI</p>
-  <p class="bio">Tap mic and speak naturally in English, Yoruba, Hausa, Igbo or Pidgin</p>
+  <p class="bio">
+    <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/></svg>
+    Tap mic and speak naturally in English, Yoruba, Hausa, Igbo or Pidgin
+  </p>
 
   <div class="mic-section">
+    <div class="mic-ring"></div>
     <div class="mic-ring"></div>
     <button class="mic-btn" id="mic">🎤</button>
     <div class="transcript-live" id="transcriptLive"></div>
@@ -374,8 +398,8 @@ h1{
     </div>
   </div>
 
-  <p class="hint">"Send 5k to Seyi" • "Fi 2k ranṣẹ si Mama" • "Tura dubu biyu zuwa Tunde"</p>
-  <div class="status-card" id="status">Tap the mic to start</div>
+  <p class="hint">"Send 5k to Seyi" • "Fi ẹgbẹrun mewa ranṣẹ si Mama" • "Tura dubu biyu zuwa Tunde"</p>
+  <div class="status-card" id="status">Tap the mic to start speaking</div>
 
   <div class="confirm-box" id="confirmBox">
     <button class="btn btn-confirm" onclick="createOpayLink()">Confirm & Pay</button>
@@ -384,12 +408,12 @@ h1{
 
   <div class="loading-opay" id="loadingOpay">
     <div class="spinner"></div>
-    Creating Opay payment link...
+    Creating secure Opay payment link...
   </div>
 
   <div class="footer">
     <div class="security">
-      <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+      <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
       Secured by Opay
     </div>
   </div>
@@ -424,16 +448,16 @@ const loadingOpay = document.getElementById('loadingOpay');
 let currentIntent = null;
 let currentUser = null;
 let availableVoices = [];
+let hasSpokenWelcome = false;
 
 // REMEMBERS ACCOUNTS + CONVERSATION STATE
-let conversationState = { 
-  amount: null, 
-  recipient: null, 
+let conversationState = {
+  amount: null,
+  recipient: null,
   account_number: null,
-  step: 'start' 
+  step: 'start'
 };
 
-// Load saved contacts from localStorage
 let savedContacts = JSON.parse(localStorage.getItem('harps_contacts') || '{}');
 
 onAuthStateChanged(auth, (user) => {
@@ -441,6 +465,13 @@ onAuthStateChanged(auth, (user) => {
   else {
     currentUser = user;
     localStorage.setItem('uid', user.uid);
+    // SPEAK WELCOME ON FIRST LOAD - ONLY AFTER USER INTERACTION
+    setTimeout(() => {
+      if (!hasSpokenWelcome) {
+        speakHarps('Hello. Tap the microphone and tell me who to send money to.', 'en');
+        hasSpokenWelcome = true;
+      }
+    }, 500);
   }
 });
 
@@ -450,47 +481,45 @@ function loadVoices() {
 speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
-// NIGERIAN WOMAN VOICE - NOT ROBOT
+// FORCE NIGERIAN WOMAN VOICE
 function speakHarps(text, language = 'en') {
   return new Promise((resolve) => {
     speechSynthesis.cancel();
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(text);
-      
+
       const langMap = {
         'en': 'en-NG',
-        'yo': 'yo-NG', 
+        'yo': 'yo-NG',
         'ha': 'ha-NG',
         'ig': 'ig-NG',
         'pcm': 'en-NG'
       };
       utterance.lang = langMap[language] || 'en-NG';
-      
-      // PRIORITY: Nigerian female > UK female > Any female > Default
-      let femaleVoice = availableVoices.find(v => 
+
+      let femaleVoice = availableVoices.find(v =>
         v.lang === 'en-NG' && v.name.toLowerCase().includes('female')
-      ) || availableVoices.find(v => 
+      ) || availableVoices.find(v =>
         v.lang === 'en-NG'
-      ) || availableVoices.find(v => 
+      ) || availableVoices.find(v =>
         v.name.includes('Google UK English Female')
-      ) || availableVoices.find(v => 
+      ) || availableVoices.find(v =>
         v.name.includes('Samantha')
-      ) || availableVoices.find(v => 
+      ) || availableVoices.find(v =>
         v.name.toLowerCase().includes('female')
-      ) || availableVoices.find(v => 
+      ) || availableVoices.find(v =>
         v.lang.startsWith('en') &&!v.name.toLowerCase().includes('male')
       );
-      
+
       if (femaleVoice) {
         utterance.voice = femaleVoice;
         console.log('Using Nigerian woman voice:', femaleVoice.name);
       }
-      
-      // HUMAN-LIKE SPEECH: Slower, warmer, expressive
-      utterance.pitch = 1.05; // Slightly higher = woman, natural
-      utterance.rate = 0.82; // Slower for clarity, not robot
-      utterance.volume = 1; // Loud for elders
-      
+
+      utterance.pitch = 1.05;
+      utterance.rate = 0.82;
+      utterance.volume = 1;
+
       utterance.onend = resolve;
       utterance.onerror = resolve;
       speechSynthesis.speak(utterance);
@@ -517,6 +546,7 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
     confirmBox.classList.remove('show');
     transcriptLive.classList.add('show');
     confidenceBar.classList.remove('show');
+    speakHarps('I am listening. Speak your payment.', 'en');
   };
 
   recognition.onend = () => {
@@ -542,16 +572,14 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
       status.classList.add('active');
 
       try{
-        // Build transcript based on conversation state
         let transcriptToSend = final;
-        
+
         if (conversationState.step === 'amount') {
           transcriptToSend = `Send ${final} to ${conversationState.recipient}`;
         } else if (conversationState.step === 'recipient') {
           transcriptToSend = `Send ${conversationState.amount} to ${final}`;
         } else if (conversationState.step === 'account_number') {
-          // User just said account number
-          conversationState.account_number = final.replace(/\D/g,''); // Extract numbers only
+          conversationState.account_number = final.replace(/\D/g,'');
           savedContacts[conversationState.recipient] = {
             account_number: conversationState.account_number,
             name: conversationState.recipient
@@ -575,12 +603,11 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
         const data = await res.json();
         console.log('Backend returned:', data);
 
-        // Update state
         if (data.amount) conversationState.amount = data.amount;
         if (data.recipient) conversationState.recipient = data.recipient;
 
         currentIntent = {
-        ...data,
+       ...data,
           amount: conversationState.amount,
           recipient: conversationState.recipient,
           account_number: savedContacts[conversationState.recipient]?.account_number || null
@@ -589,13 +616,12 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
         confidenceBar.classList.add('show');
         confidenceFill.style.width = (data.confidence * 100) + '%';
 
-        // SMART COLLECTION: Check what we're missing
         if (!conversationState.amount && conversationState.recipient) {
           conversationState.step = 'amount';
           const ask = `How much should I send to ${conversationState.recipient}, please?`;
           status.innerText = ask;
           await speakHarps(ask, data.language_detected);
-        } 
+        }
         else if (!conversationState.recipient && conversationState.amount) {
           conversationState.step = 'recipient';
           const ask = `Send ₦${conversationState.amount.toLocaleString()} to who, please?`;
@@ -603,9 +629,7 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
           await speakHarps(ask, data.language_detected);
         }
         else if (conversationState.amount && conversationState.recipient) {
-          // CHECK IF WE KNOW THIS PERSON'S ACCOUNT
           if (savedContacts[conversationState.recipient]) {
-            // WE KNOW THEM - Skip account number
             conversationState.account_number = savedContacts[conversationState.recipient].account_number;
             conversationState.step = 'confirm';
             const confirmText = `Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient}?`;
@@ -613,13 +637,12 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
             await speakHarps(confirmText, data.language_detected);
             confirmBox.classList.add('show');
           } else {
-            // FIRST TIME - Ask for account number
             conversationState.step = 'account_number';
             const ask = `This is my first time sending to ${conversationState.recipient}. Please say the account number.`;
             status.innerText = ask;
             await speakHarps(ask, data.language_detected);
           }
-        } 
+        }
         else {
           status.innerText = data.response;
           await speakHarps(data.response, data.language_detected);
@@ -685,8 +708,8 @@ window.createOpayLink = async () => {
 
     const data = await res.json();
 
-    if (data.success && (data.paymentUrl || data.data?.cashierUrl)) {
-      const opayUrl = data.paymentUrl || data.data.cashierUrl;
+    if (data.success || data.data) {
+      const opayUrl = data.paymentUrl || data.data?.cashierUrl;
       await speakHarps(`Opening Opay. Amount ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient} is locked. Just enter your PIN.`, currentIntent.language_detected);
       status.innerText = 'Redirecting to Opay...';
 
