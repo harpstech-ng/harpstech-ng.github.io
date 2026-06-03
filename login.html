@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Harps Tech Pay Team | VoicePay Login</title>
+<title>VoicePay Team | VoicePay Login</title>
 
 <!-- SOCIAL MEDIA LINK PREVIEW - IMAGE SHOWS WHEN YOU SHARE -->
 <meta property="og:title" content="VoicePay - Speak to Pay">
@@ -303,12 +303,12 @@ input:focus{
 <body>
 <div class="card">
   <div class="brand">
-    <img src="IMG_6416.jpeg" class="logo" alt="Harps Tech Logo" onerror="this.style.display='none'">
+    <img src="IMG_6416.jpeg" class="logo" alt="VoicePay Logo" onerror="this.style.display='none'">
     <span class="badge">
       <svg fill="currentColor" viewBox="0 0 20 20"><path d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM8 15V9h4v6H8z"/></svg>
       Powered by Opay
     </span>
-    <h2 id="title">Harps VoicePay</h2>
+    <h2 id="title">VoicePay</h2>
     <p class="sub" id="subtitle">Speak to send money, fast and secure</p>
     <p class="sub-bio">Voice-authenticated login for maximum security</p>
   </div>
@@ -379,7 +379,7 @@ input:focus{
       <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
       Secured by Opay
     </div>
-    <div>Harps Tech Pay Team</div>
+    <div>VoicePay Team</div>
   </div>
 </div>
 
@@ -416,7 +416,7 @@ let hasSpokenWelcome = false;
 
 const phrases = [
   "My voice is my password",
-  "Harps VoicePay secure",
+  "VoicePay secure",
   "Send money with my voice"
 ];
 
@@ -465,8 +465,8 @@ function speakHarps(text) {
 window.toggleMode = () => {
   isLogin =!isLogin;
   signupStep = 1;
-  document.getElementById('title').innerText = isLogin ? 'Harps VoicePay' : 'Create Account';
-  document.getElementById('subtitle').innerText = isLogin ? 'Speak to send money, fast and secure' : 'Join Harps VoicePay powered by Opay';
+  document.getElementById('title').innerText = isLogin ? 'VoicePay' : 'Create Account';
+  document.getElementById('subtitle').innerText = isLogin ? 'Speak to send money, fast and secure' : 'Join VoicePay powered by Opay';
   document.getElementById('mainBtn').innerText = isLogin ? 'Login' : 'Continue';
   document.getElementById('toggleText').innerText = isLogin ? "Don't have an account? " : "Already have an account? ";
   document.getElementById('stepIndicator').style.display = isLogin ? 'none' : 'flex';
