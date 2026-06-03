@@ -62,13 +62,23 @@ body{
   -webkit-text-fill-color:transparent;
   background-clip:text;
 }
+.user-info{
+  text-align:right;
+}
+.username{
+  font-size:14px;
+  font-weight:600;
+  color:white;
+}
 .team{
-  font-size:12px;
+  font-size:11px;
   color:var(--text-muted);
   font-weight:500;
   display:flex;
   align-items:center;
-  gap:8px;
+  gap:6px;
+  justify-content:flex-end;
+  margin-top:2px;
 }
 .team-dot{
   width:6px;
@@ -314,17 +324,21 @@ h2{
   backdrop-filter:blur(10px);
 }
 .voice-active svg{width:14px;height:14px}
-.voiceprint-check{
-  background:rgba(255,149,0,0.1);
-  border:1px solid rgba(255,149,0,0.3);
-  color:#ff9500;
-  padding:14px;
-  border-radius:14px;
-  font-size:13px;
-  margin:16px 0;
-  display:none;
-  line-height:1.5;
+.loading{
+  text-align:center;
+  padding:40px 0;
+  color:var(--text-muted);
 }
+.spinner{
+  width:20px;
+  height:20px;
+  border:3px solid var(--border);
+  border-top-color:var(--green);
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+  margin:0 auto 12px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -333,9 +347,12 @@ h2{
     <img src="IMG_6416.jpeg" class="logo" alt="VoicePay" onerror="this.style.display='none'">
     <span class="logo-text">VoicePay</span>
   </div>
-  <div class="team">
-    <span class="team-dot"></span>
-    VoicePay Team
+  <div class="user-info">
+    <div class="username" id="userName">Loading...</div>
+    <div class="team">
+      <span class="team-dot"></span>
+      VoicePay Team
+    </div>
   </div>
 </div>
 
@@ -351,7 +368,7 @@ h2{
   🎓 Student Account - ₦10,000 daily limit
 </div>
 
-<div class="card success-card">
+<div class="card success-card" id="receiptCard" style="display:none">
   <div class="success-icon">✓</div>
   <div class="big-amount" id="amount">₦0</div>
   <div class="row">
@@ -373,10 +390,6 @@ h2{
 
   <div class="voice-quote" id="voiceText">"Loading voice receipt..."</div>
 
-  <div class="voiceprint-check" id="voicePrintNotice">
-    🔒 Voice Print Required: Tap mic and say "Confirm payment" to approve ₦<span id="vpAmount"></span>
-  </div>
-
   <button class="btn" onclick="speakReceipt()">
     <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415A3.984 3.984 0 0013 10a3.983 0 00-1.172-2.828 1 1 0 010-1.415z"/></svg>
     Play Voice Receipt
@@ -386,7 +399,10 @@ h2{
 <div class="card">
   <h3>Recent Transactions</h3>
   <div id="historyList">
-    <div class="empty">No transactions yet</div>
+    <div class="loading">
+      <div class="spinner"></div>
+      Loading transactions...
+    </div>
   </div>
 </div>
 
@@ -394,7 +410,7 @@ h2{
   <svg fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM8 11V7h4v4H8z"/></svg>
   Check Balance via Voice
 </button>
-<button class="btn btn-secondary" onclick="window.location.href='/index.html'">
+<button class="btn btn-secondary" onclick="window.location.href='./index.html'">
   <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
   New Payment
 </button>
@@ -411,6 +427,7 @@ h2{
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCv8Wz-zkn-Xt5yNO4j8opEeMwsOGCCv_8",
@@ -423,19 +440,22 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 const BACKEND_URL = 'https://harps-voicepay.onrender.com';
 
 let availableVoices = [];
+let currentUser = null;
+let currentUserData = null;
 
-// FORCE LOAD NIGERIAN WOMAN VOICE
+// FORCE LOAD NIGERIAN WOMAN VOICE - FIX CHROME MAN VOICE
 function loadVoices() {
   availableVoices = speechSynthesis.getVoices();
-  console.log('Voices loaded:', availableVoices.length);
+  console.log('Available voices:', availableVoices.map(v => v.name + ' (' + v.lang + ')'));
 }
 speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
-// NIGERIAN WOMAN VOICE - FORCED
+// AGGRESSIVE FEMALE VOICE SELECTION - WORKS ON CHROME + SAFARI
 function speakHarps(text, language = 'en') {
   return new Promise((resolve) => {
     speechSynthesis.cancel();
@@ -443,28 +463,42 @@ function speakHarps(text, language = 'en') {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-NG';
       
-      // FORCE FEMALE VOICE SELECTION
+      // PRIORITY 1: Nigerian English Female
       let femaleVoice = availableVoices.find(v => 
-        v.lang === 'en-NG' && v.name.toLowerCase().includes('female')
-      ) || availableVoices.find(v => 
-        v.lang === 'en-NG'
-      ) || availableVoices.find(v => 
-        v.name.includes('Google UK English Female')
-      ) || availableVoices.find(v => 
-        v.name.includes('Samantha')
-      ) || availableVoices.find(v => 
+        v.lang === 'en-NG' && (v.name.toLowerCase().includes('female') || v.name.includes('Google'))
+      );
+      
+      // PRIORITY 2: Any Nigerian voice
+      if (!femaleVoice) femaleVoice = availableVoices.find(v => v.lang === 'en-NG');
+      
+      // PRIORITY 3: Google UK Female - Chrome default female
+      if (!femaleVoice) femaleVoice = availableVoices.find(v => 
+        v.name === 'Google UK English Female'
+      );
+      
+      // PRIORITY 4: Samantha - Safari/iOS female
+      if (!femaleVoice) femaleVoice = availableVoices.find(v => 
+        v.name === 'Samantha' || v.name.includes('Samantha')
+      );
+      
+      // PRIORITY 5: Any voice with "female" in name
+      if (!femaleVoice) femaleVoice = availableVoices.find(v => 
         v.name.toLowerCase().includes('female')
-      ) || availableVoices.find(v => 
-        v.lang.startsWith('en') && !v.name.toLowerCase().includes('male')
+      );
+      
+      // PRIORITY 6: Any English voice NOT male
+      if (!femaleVoice) femaleVoice = availableVoices.find(v => 
+        v.lang.startsWith('en') &&!v.name.toLowerCase().includes('male')
       );
       
       if (femaleVoice) {
         utterance.voice = femaleVoice;
-        console.log('Using voice:', femaleVoice.name);
+        console.log('Using voice:', femaleVoice.name, femaleVoice.lang);
       }
       
-      utterance.pitch = 1.05; // WOMAN VOICE - higher pitch
-      utterance.rate = 0.82; // SLOWER for elders
+      // FORCE WOMAN SETTINGS
+      utterance.pitch = 1.15; // Higher = more feminine
+      utterance.rate = 0.85; // Slower = less robotic
       utterance.volume = 1;
       
       utterance.onend = resolve;
@@ -474,78 +508,140 @@ function speakHarps(text, language = 'en') {
   });
 }
 
-const receipt = JSON.parse(localStorage.getItem('receipt') || 'null');
-if(!receipt) {
-  document.querySelector('.success-card').style.display = 'none';
-} else {
-  document.getElementById('amount').innerText = '₦' + receipt.amount.toLocaleString();
+// LOAD USERNAME + TRANSACTIONS FROM FIREBASE
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = './login.html';
+    return;
+  }
+  
+  currentUser = user;
+  
+  // Get username from Firestore
+  try {
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    if (userDoc.exists()) {
+      currentUserData = userDoc.data();
+      document.getElementById('userName').innerText = currentUserData.displayName || user.email.split('@')[0];
+      
+      if (currentUserData.isStudent) {
+        document.getElementById('studentBadgeDash').style.display = 'inline-flex';
+      }
+    } else {
+      document.getElementById('userName').innerText = user.email.split('@')[0];
+    }
+  } catch (e) {
+    console.error('Error loading user:', e);
+    document.getElementById('userName').innerText = user.email.split('@')[0];
+  }
+  
+  // Load transactions from Firestore
+  await loadHistoryFromFirestore(user.uid);
+  
+  // Check for receipt from mock-opay
+  const receipt = JSON.parse(localStorage.getItem('receipt') || 'null');
+  if (receipt) {
+    await displayReceipt(receipt);
+    localStorage.removeItem('receipt');
+  }
+});
+
+// SAVE TO FIRESTORE INSTEAD OF LOCALSTORAGE
+async function saveToFirestore(receipt, uid) {
+  try {
+    await addDoc(collection(db, 'transactions'), {
+     ...receipt,
+      userId: uid,
+      createdAt: serverTimestamp()
+    });
+  } catch (e) {
+    console.error('Error saving transaction:', e);
+  }
+}
+
+// LOAD HISTORY FROM FIRESTORE
+async function loadHistoryFromFirestore(uid) {
+  const list = document.getElementById('historyList');
+  
+  try {
+    const q = query(
+      collection(db, 'transactions'),
+      where('userId', '==', uid),
+      orderBy('createdAt', 'desc'),
+      limit(5)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      list.innerHTML = '<div class="empty">No transactions yet. Make your first voice payment!</div>';
+      return;
+    }
+    
+    const history = [];
+    querySnapshot.forEach((doc) => {
+      history.push({ id: doc.id,...doc.data() });
+    });
+    
+    list.innerHTML = history.map(tx => `
+      <div class="history-item">
+        <div class="history-left">
+          <div class="history-icon">💸</div>
+          <div class="history-details">
+            <h4>${tx.recipient}</h4>
+            <p>${tx.bank || 'Opay'} • ${tx.intent || 'transfer'}</p>
+          </div>
+        </div>
+        <div class="history-amount">
+          <div class="amount">₦${(tx.amount / 100).toLocaleString()}</div>
+          <div class="time">${timeAgo(tx.date || tx.createdAt?.toDate())}</div>
+        </div>
+      </div>
+    `).join('');
+    
+  } catch (e) {
+    console.error('Error loading history:', e);
+    list.innerHTML = '<div class="empty">Error loading transactions</div>';
+  }
+}
+
+async function displayReceipt(receipt) {
+  document.getElementById('receiptCard').style.display = 'block';
+  document.getElementById('amount').innerText = '₦' + (receipt.amount / 100).toLocaleString();
   document.getElementById('recipient').innerText = receipt.recipient || '-';
   document.getElementById('bank').innerText = receipt.bank || 'Opay';
   document.getElementById('time').innerText = timeAgo(receipt.date);
   document.getElementById('ref').innerText = receipt.reference || receipt.txnId || '-';
-
-  if (receipt.amount > 10000) {
-    document.getElementById('vpAmount').innerText = receipt.amount.toLocaleString();
-    document.getElementById('voicePrintNotice').style.display = 'block';
-  }
-
-  fetch(BACKEND_URL+'/generate-receipt',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      amount:receipt.amount,
-      recipient:receipt.recipient,
-      language:'en'
-    })
-  }).then(r=>r.json()).then(d=>{
-    const text = d.voice_text || `Sent ₦${receipt.amount} to ${receipt.recipient}. Payment link auto-filled in Opay.`;
-    document.getElementById('voiceText').innerText = `"${text}"`;
-    localStorage.setItem('last_voice_receipt', text);
-  }).catch(()=>{
-    document.getElementById('voiceText').innerText = `"Payment of ₦${receipt.amount} to ${receipt.recipient} completed. Opay checkout was pre-filled."`;
-  });
-
-  saveToHistory(receipt);
-}
-
-loadHistory();
-
-function saveToHistory(receipt) {
-  let history = JSON.parse(localStorage.getItem('harps_history') || '[]');
-  if (!history.find(h => h.reference === receipt.reference)) {
-    history.unshift(receipt);
-    history = history.slice(0, 5);
-    localStorage.setItem('harps_history', JSON.stringify(history));
-  }
-}
-
-function loadHistory() {
-  const history = JSON.parse(localStorage.getItem('harps_history') || '[]');
-  const list = document.getElementById('historyList');
   
-  if (history.length === 0) {
-    list.innerHTML = '<div class="empty">No transactions yet. Make your first voice payment!</div>';
-    return;
+  // Save to Firestore
+  if (currentUser) {
+    await saveToFirestore(receipt, currentUser.uid);
+    await loadHistoryFromFirestore(currentUser.uid);
   }
-
-  list.innerHTML = history.map(tx => `
-    <div class="history-item">
-      <div class="history-left">
-        <div class="history-icon">💸</div>
-        <div class="history-details">
-          <h4>${tx.recipient}</h4>
-          <p>${tx.bank || 'Opay'} • ${tx.intent || 'transfer'}</p>
-        </div>
-      </div>
-      <div class="history-amount">
-        <div class="amount">₦${tx.amount.toLocaleString()}</div>
-        <div class="time">${timeAgo(tx.date)}</div>
-      </div>
-    </div>
-  `).join('');
+  
+  // Generate voice receipt
+  try {
+    const res = await fetch(BACKEND_URL + '/generate-receipt', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        amount: receipt.amount / 100,
+        recipient: receipt.recipient,
+        language: 'en'
+      })
+    });
+    const data = await res.json();
+    const text = data.voice_text || `Sent ₦${receipt.amount / 100} to ${receipt.recipient}. Payment completed.`;
+    document.getElementById('voiceText').innerText = `"${text}"`;
+  } catch {
+    document.getElementById('voiceText').innerText = `"Payment of ₦${receipt.amount / 100} to ${receipt.recipient} completed."`;
+  }
 }
 
 function timeAgo(timestamp) {
-  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  if (!timestamp) return 'Just now';
+  const date = timestamp instanceof Date? timestamp : new Date(timestamp);
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
   if (seconds < 60) return 'Just now';
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
@@ -560,40 +656,16 @@ window.speakReceipt = function() {
   speakHarps(text, 'en');
 }
 
-// NO MORE FAKE BALANCE
 window.checkBalance = async function() {
   const text = "To check your real Opay balance, please open your Opay app. I don't have access to your account balance.";
   await speakHarps(text, 'en');
-  
-  const history = JSON.parse(localStorage.getItem('harps_history') || '[]');
-  if (history.length > 0) {
-    const lastTx = history[0];
-    setTimeout(() => {
-      speakHarps(`Your last payment was ₦${lastTx.amount.toLocaleString()} to ${lastTx.recipient}, ${timeAgo(lastTx.date)}.`, 'en');
-    }, 3000);
-  }
 }
 
 window.logout = async function() {
   await signOut(auth);
   localStorage.clear();
-  window.location.href='/login.html';
+  window.location.href = './login.html';
 }
-
-onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    window.location.href = '/login.html';
-  } else {
-    try {
-      const userData = await fetch(BACKEND_URL + '/get-user/' + user.uid).then(r=>r.json());
-      if (userData.isStudent) {
-        document.getElementById('studentBadgeDash').style.display = 'inline-flex';
-      }
-    } catch (e) {
-      console.log('Could not fetch user data');
-    }
-  }
-});
 </script>
 
 <script>
