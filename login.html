@@ -5,12 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Harps Tech Pay Team | VoicePay Login</title>
 
-<!-- PWA Tags - Added -->
+<!-- SOCIAL MEDIA LINK PREVIEW - IMAGE SHOWS WHEN YOU SHARE -->
+<meta property="og:title" content="VoicePay - Speak to Pay">
+<meta property="og:description" content="Send money, buy airtime, pay bills using your voice in English, Yoruba, Hausa, Igbo or Pidgin. Powered by Opay.">
+<meta property="og:image" content="https://harpstech-ng.github.io/IMG_6416.jpeg">
+<meta property="og:url" content="https://harpstech-ng.github.io/login.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="VoicePay - Speak to Pay">
+<meta name="twitter:description" content="Voice-authenticated payments powered by Groq AI">
+<meta name="twitter:image" content="https://harpstech-ng.github.io/IMG_6416.jpeg">
+
+<!-- PWA Tags -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#00D084">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="IMG_6416.jpeg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
 :root{
@@ -23,7 +37,7 @@
 body{
   background:radial-gradient(1200px 800px at 50% -10%, rgba(0,208,132,0.15), transparent 50%), #0a0a0a;
   color:white;
-  font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -372,6 +386,7 @@ input:focus{
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCv8Wz-zkn-Xt5yNO4j8opEeMwsOGCCv_8",
@@ -385,6 +400,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 const BACKEND_URL = 'https://harps-voicepay.onrender.com';
 
 let isLogin = true;
@@ -395,6 +411,8 @@ let currentPhrase = 0;
 let userAge = 0;
 let isStudent = false;
 let tempUserData = {};
+let availableVoices = [];
+let hasSpokenWelcome = false;
 
 const phrases = [
   "My voice is my password",
@@ -403,11 +421,49 @@ const phrases = [
 ];
 
 onAuthStateChanged(auth, (user) => {
-  if (user) window.location.href = '/index.html';
+  if (user) window.location.href = './index.html';
 });
 
+// FORCE FEMALE VOICE - SAME AS INDEX.HTML
+function loadVoices() {
+  availableVoices = speechSynthesis.getVoices();
+  console.log('Available voices:', availableVoices.map(v => v.name));
+}
+speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+function speakHarps(text) {
+  return new Promise((resolve) => {
+    speechSynthesis.cancel();
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-NG';
+      
+      // FORCE WOMAN VOICE ONLY
+      let femaleVoice = availableVoices.find(v => v.name === 'Google UK English Female') ||
+                       availableVoices.find(v => v.name === 'Samantha') ||
+                       availableVoices.find(v => v.lang === 'en-NG') ||
+                       availableVoices.find(v => v.name.toLowerCase().includes('female')) ||
+                       availableVoices.find(v => v.lang.startsWith('en') &&!v.name.toLowerCase().includes('male'));
+      
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+        console.log('Using FEMALE voice:', femaleVoice.name);
+      }
+      
+      utterance.pitch = 1.2; // More feminine
+      utterance.rate = 0.85;
+      utterance.volume = 1;
+      
+      utterance.onend = resolve;
+      utterance.onerror = resolve;
+      speechSynthesis.speak(utterance);
+    }, 150);
+  });
+}
+
 window.toggleMode = () => {
-  isLogin = !isLogin;
+  isLogin =!isLogin;
   signupStep = 1;
   document.getElementById('title').innerText = isLogin ? 'Harps VoicePay' : 'Create Account';
   document.getElementById('subtitle').innerText = isLogin ? 'Speak to send money, fast and secure' : 'Join Harps VoicePay powered by Opay';
@@ -415,10 +471,17 @@ window.toggleMode = () => {
   document.getElementById('toggleText').innerText = isLogin ? "Don't have an account? " : "Already have an account? ";
   document.getElementById('stepIndicator').style.display = isLogin ? 'none' : 'flex';
   showStep('stepAuth');
+  
+  if (!isLogin &&!hasSpokenWelcome) {
+    setTimeout(() => {
+      speakHarps('Welcome. Create your secure voice account.', 'en');
+      hasSpokenWelcome = true;
+    }, 300);
+  }
 };
 
 window.togglePass = () => {
-  showPassword = !showPassword;
+  showPassword =!showPassword;
   const p = document.getElementById('password');
   const btn = document.getElementById('eyeBtn');
   p.type = showPassword ? 'text' : 'password';
@@ -455,7 +518,7 @@ window.handleAuth = async () => {
   const btn = document.getElementById('mainBtn');
   const email = document.getElementById('email').value.trim();
   const pass = document.getElementById('password').value;
-  if(!email || !pass){ showError('Please fill all fields'); return }
+  if(!email ||!pass){ showError('Please fill all fields'); return }
   
   btn.disabled = true;
   btn.innerText = 'Please wait...';
@@ -465,12 +528,14 @@ window.handleAuth = async () => {
     if(isLogin){
       const user = await signInWithEmailAndPassword(auth,email,pass);
       localStorage.setItem('uid',user.user.uid);
-      window.location.href='/index.html';
+      await speakHarps('Login successful. Redirecting.', 'en');
+      setTimeout(() => window.location.href='./index.html', 800);
     }else{
       tempUserData = {email, pass};
       signupStep = 2;
       showStep('stepAge');
       document.getElementById('stepIndicator').style.display = 'flex';
+      await speakHarps('Please enter your full name and confirm your age.', 'en');
     }
   }catch(e){
     showError(getErrorMsg(e.code));
@@ -479,7 +544,7 @@ window.handleAuth = async () => {
   }
 };
 
-window.confirmAge = () => {
+window.confirmAge = async () => {
   const fullName = document.getElementById('fullName').value.trim();
   const isOver18 = document.getElementById('ageCheck').checked;
 
@@ -489,15 +554,17 @@ window.confirmAge = () => {
   }
 
   tempUserData.fullName = fullName;
-  tempUserData.isStudent = !isOver18;
+  tempUserData.isStudent =!isOver18;
   userAge = isOver18? 25 : 16;
-  isStudent = !isOver18;
+  isStudent =!isOver18;
 
   if (isStudent) {
     document.getElementById('studentBadge').style.display = 'inline-flex';
     showSuccess('Student account - ₦10,000 daily limit applies');
+    await speakHarps('Student account. Ten thousand naira daily limit.', 'en');
   } else {
     showSuccess('Age confirmed. Proceeding to voice setup.');
+    await speakHarps('Age confirmed. Now record your voice.', 'en');
   }
 
   setTimeout(() => {
@@ -537,10 +604,12 @@ window.recordVoice = async () => {
       if (currentPhrase < 3) {
         status.textContent = `Tap to record phrase ${currentPhrase + 1} of 3`;
         document.getElementById('voicePhrase').textContent = `Say: "${phrases[currentPhrase]}"`;
+        await speakHarps(`Good. Now say: ${phrases[currentPhrase]}`, 'en');
       } else {
         status.textContent = 'Voice ID captured! ✅';
         document.getElementById('finishBtn').disabled = false;
         btn.style.display = 'none';
+        await speakHarps('Voice captured. Complete setup.', 'en');
       }
 
       stream.getTracks().forEach(track => track.stop());
@@ -557,6 +626,7 @@ window.recordVoice = async () => {
 
   } catch (err) {
     showError('Microphone access denied. Enable in browser settings.');
+    await speakHarps('Microphone access denied.', 'en');
   }
 };
 
@@ -568,6 +638,16 @@ window.completeSignup = async () => {
   try {
     const userCred = await createUserWithEmailAndPassword(auth, tempUserData.email, tempUserData.pass);
     const uid = userCred.user.uid;
+
+    // SAVE TO FIRESTORE
+    await setDoc(doc(db, 'users', uid), {
+      email: tempUserData.email,
+      fullName: tempUserData.fullName,
+      displayName: tempUserData.fullName,
+      isStudent: isStudent,
+      dailyLimit: isStudent ? 1000000 : 50000000, // 10k or 500k in kobo
+      createdAt: serverTimestamp()
+    });
 
     const formData = new FormData();
     voiceRecordings.forEach((blob, i) => {
@@ -586,7 +666,8 @@ window.completeSignup = async () => {
     localStorage.setItem('uid', uid);
     localStorage.setItem('isStudent', isStudent);
     showSuccess('Account created! Redirecting...');
-    setTimeout(() => window.location.href = '/index.html', 1500);
+    await speakHarps('Account created successfully. Welcome to VoicePay.', 'en');
+    setTimeout(() => window.location.href = './index.html', 1500);
 
   } catch (err) {
     showError('Failed to create account. Try again.');
@@ -607,6 +688,7 @@ window.resetPass = async () => {
   try{
     await sendPasswordResetEmail(auth,email);
     showSuccess('Reset link sent! Check your email inbox AND spam folder 📧');
+    await speakHarps('Reset link sent to your email.', 'en');
     setTimeout(()=>location.reload(),3000);
   }catch(e){
     showError(getErrorMsg(e.code));
