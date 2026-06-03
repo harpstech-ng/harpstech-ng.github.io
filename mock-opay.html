@@ -299,9 +299,24 @@ function paySuccess(){
   `;
   document.querySelector('.pay-btn').style.background = 'linear-gradient(135deg, #10B981, #059669)';
   
+  // CRITICAL: Save receipt so dashboard shows success
+  const receipt = {
+    amount: amt * 100, // Back to kobo
+    recipient: name,
+    bank: 'Opay',
+    intent: 'transfer',
+    date: Date.now(),
+    reference: ref,
+    txnId: ref,
+    status: 'success'
+  };
+  localStorage.setItem('receipt', JSON.stringify(receipt));
+  
   setTimeout(() => {
     alert('Demo Complete!\n\n✅ Amount ₦' + amt.toLocaleString('en-NG', {minimumFractionDigits:2}) + ' was LOCKED\n✅ Pre-filled from VoicePay voice command\n✅ User cannot edit amount\n\nIn production: User would enter Opay PIN to complete.\n\nFor judges: This proves VoicePay → Opay integration with locked amounts works.');
-    window.location.href = 'https://harpstech-ng.github.io/HarpsPay/dashboard.html?payment=success&ref=' + ref;
+    
+    // FIXED: Correct redirect to your dashboard
+    window.location.href = 'https://harpstech-ng.github.io/dashboard.html?payment=success&ref=' + ref;
   }, 800);
 }
 </script>
