@@ -363,7 +363,7 @@ h1{
 
   <h1>Speak Your Payment</h1>
   <p class="sub">Voice-authenticated payments powered by Groq AI</p>
-  <p class="bio">Tap mic and speak naturally in English, Yoruba, Hausa, or Pidgin</p>
+  <p class="bio">Tap mic and speak naturally in English, Yoruba, Hausa, Igbo or Pidgin</p>
 
   <div class="mic-section">
     <div class="mic-ring"></div>
@@ -425,6 +425,17 @@ let currentIntent = null;
 let currentUser = null;
 let availableVoices = [];
 
+// REMEMBERS ACCOUNTS + CONVERSATION STATE
+let conversationState = { 
+  amount: null, 
+  recipient: null, 
+  account_number: null,
+  step: 'start' 
+};
+
+// Load saved contacts from localStorage
+let savedContacts = JSON.parse(localStorage.getItem('harps_contacts') || '{}');
+
 onAuthStateChanged(auth, (user) => {
   if (!user) window.location.href = '/login.html';
   else {
@@ -433,40 +444,57 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-localStorage.removeItem('harpsReply');
-
 function loadVoices() {
   availableVoices = speechSynthesis.getVoices();
 }
 speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
+// NIGERIAN WOMAN VOICE - NOT ROBOT
 function speakHarps(text, language = 'en') {
   return new Promise((resolve) => {
     speechSynthesis.cancel();
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(text);
+      
       const langMap = {
         'en': 'en-NG',
-        'yo': 'yo-NG',
+        'yo': 'yo-NG', 
         'ha': 'ha-NG',
         'ig': 'ig-NG',
         'pcm': 'en-NG'
       };
       utterance.lang = langMap[language] || 'en-NG';
-      const langVoice = availableVoices.find(v => v.lang.startsWith(langMap[language]?.split('-')[0]));
-      if (langVoice) utterance.voice = langVoice;
-      utterance.pitch = 0.9;
-      utterance.rate = 0.95;
-      utterance.volume = 1;
+      
+      // PRIORITY: Nigerian female > UK female > Any female > Default
+      let femaleVoice = availableVoices.find(v => 
+        v.lang === 'en-NG' && v.name.toLowerCase().includes('female')
+      ) || availableVoices.find(v => 
+        v.lang === 'en-NG'
+      ) || availableVoices.find(v => 
+        v.name.includes('Google UK English Female')
+      ) || availableVoices.find(v => 
+        v.name.includes('Samantha')
+      ) || availableVoices.find(v => 
+        v.name.toLowerCase().includes('female')
+      ) || availableVoices.find(v => 
+        v.lang.startsWith('en') &&!v.name.toLowerCase().includes('male')
+      );
+      
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+        console.log('Using Nigerian woman voice:', femaleVoice.name);
+      }
+      
+      // HUMAN-LIKE SPEECH: Slower, warmer, expressive
+      utterance.pitch = 1.05; // Slightly higher = woman, natural
+      utterance.rate = 0.82; // Slower for clarity, not robot
+      utterance.volume = 1; // Loud for elders
+      
       utterance.onend = resolve;
-      utterance.onerror = () => {
-        utterance.lang = 'en-NG';
-        speechSynthesis.speak(utterance);
-        resolve();
-      };
+      utterance.onerror = resolve;
       speechSynthesis.speak(utterance);
-    }, 100);
+    }, 150);
   });
 }
 
@@ -476,11 +504,10 @@ let isListening = false;
 if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
-  // UPGRADE FOR ELDERS: Continuous + longer silence timeout
   recognition.lang = 'en-NG';
-  recognition.continuous = true; // Don't stop after first pause
+  recognition.continuous = true;
   recognition.interimResults = true;
-  recognition.maxAlternatives = 3; // Get multiple guesses for unclear speech
+  recognition.maxAlternatives = 3;
 
   recognition.onstart = () => {
     isListening = true;
@@ -515,28 +542,87 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
       status.classList.add('active');
 
       try{
+        // Build transcript based on conversation state
+        let transcriptToSend = final;
+        
+        if (conversationState.step === 'amount') {
+          transcriptToSend = `Send ${final} to ${conversationState.recipient}`;
+        } else if (conversationState.step === 'recipient') {
+          transcriptToSend = `Send ${conversationState.amount} to ${final}`;
+        } else if (conversationState.step === 'account_number') {
+          // User just said account number
+          conversationState.account_number = final.replace(/\D/g,''); // Extract numbers only
+          savedContacts[conversationState.recipient] = {
+            account_number: conversationState.account_number,
+            name: conversationState.recipient
+          };
+          localStorage.setItem('harps_contacts', JSON.stringify(savedContacts));
+          const confirmText = `Saved. Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient}?`;
+          status.innerText = confirmText;
+          await speakHarps(confirmText, 'en');
+          confirmBox.classList.add('show');
+          conversationState.step = 'confirm';
+          return;
+        }
+
         const res = await fetch(BACKEND_URL + '/parse', {
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({transcript:final})
+          body:JSON.stringify({transcript: transcriptToSend})
         });
 
         if (!res.ok) throw new Error('Server error ' + res.status);
         const data = await res.json();
         console.log('Backend returned:', data);
 
-        currentIntent = data;
+        // Update state
+        if (data.amount) conversationState.amount = data.amount;
+        if (data.recipient) conversationState.recipient = data.recipient;
+
+        currentIntent = {
+        ...data,
+          amount: conversationState.amount,
+          recipient: conversationState.recipient,
+          account_number: savedContacts[conversationState.recipient]?.account_number || null
+        };
 
         confidenceBar.classList.add('show');
         confidenceFill.style.width = (data.confidence * 100) + '%';
 
-        status.innerText = data.response;
-        await speakHarps(data.response, data.language_detected);
-
-        if (!data.needs_confirmation && data.intent === 'transfer' && data.amount > 0 && data.recipient) {
-          confirmBox.classList.add('show');
-        } else {
-          status.innerText = data.response + ' Tap mic to try again.';
+        // SMART COLLECTION: Check what we're missing
+        if (!conversationState.amount && conversationState.recipient) {
+          conversationState.step = 'amount';
+          const ask = `How much should I send to ${conversationState.recipient}, please?`;
+          status.innerText = ask;
+          await speakHarps(ask, data.language_detected);
+        } 
+        else if (!conversationState.recipient && conversationState.amount) {
+          conversationState.step = 'recipient';
+          const ask = `Send ₦${conversationState.amount.toLocaleString()} to who, please?`;
+          status.innerText = ask;
+          await speakHarps(ask, data.language_detected);
+        }
+        else if (conversationState.amount && conversationState.recipient) {
+          // CHECK IF WE KNOW THIS PERSON'S ACCOUNT
+          if (savedContacts[conversationState.recipient]) {
+            // WE KNOW THEM - Skip account number
+            conversationState.account_number = savedContacts[conversationState.recipient].account_number;
+            conversationState.step = 'confirm';
+            const confirmText = `Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient}?`;
+            status.innerText = confirmText;
+            await speakHarps(confirmText, data.language_detected);
+            confirmBox.classList.add('show');
+          } else {
+            // FIRST TIME - Ask for account number
+            conversationState.step = 'account_number';
+            const ask = `This is my first time sending to ${conversationState.recipient}. Please say the account number.`;
+            status.innerText = ask;
+            await speakHarps(ask, data.language_detected);
+          }
+        } 
+        else {
+          status.innerText = data.response;
+          await speakHarps(data.response, data.language_detected);
         }
 
       }catch(err){
@@ -554,7 +640,7 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
     if (e.error === 'no-speech') {
       status.innerText = 'No speech detected. Tap mic again.';
     } else if (e.error === 'not-allowed') {
-      status.innerText = 'Mic permission denied. Enable in Settings > Safari > Microphone';
+      status.innerText = 'Mic permission denied. Enable in Settings.';
     } else if (e.error!== 'aborted') {
       status.innerText = 'Mic error: ' + e.error;
     }
@@ -563,7 +649,7 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
 
 mic.onclick = () => {
   if(!recognition){
-    alert('Voice input not supported. Use Safari on iPhone or Chrome on Android.');
+    alert('Voice input not supported. Use Safari on iPhone or Chrome.');
     return;
   }
   if (isListening) {
@@ -573,13 +659,12 @@ mic.onclick = () => {
   try {
     recognition.start();
   } catch (e) {
-    console.log('Recognition start error:', e);
     status.innerText = 'Tap again to restart mic';
   }
 };
 
 window.createOpayLink = async () => {
-  if (!currentIntent ||!currentUser) return;
+  if (!currentIntent ||!currentUser ||!conversationState.amount ||!conversationState.recipient) return;
 
   confirmBox.classList.remove('show');
   loadingOpay.classList.add('show');
@@ -590,26 +675,27 @@ window.createOpayLink = async () => {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        amount: currentIntent.amount,
-        recipient: currentIntent.recipient,
-        narration: `VoicePay to ${currentIntent.recipient}`,
+        amount: conversationState.amount,
+        recipient: conversationState.recipient,
+        account_number: conversationState.account_number,
+        narration: `VoicePay to ${conversationState.recipient}`,
         userId: currentUser.uid
       })
     });
 
     const data = await res.json();
 
-    if (data.success && data.paymentUrl) {
-      await speakHarps(`Opening Opay. Just enter your PIN to complete.`, currentIntent.language_detected);
+    if (data.success && (data.paymentUrl || data.data?.cashierUrl)) {
+      const opayUrl = data.paymentUrl || data.data.cashierUrl;
+      await speakHarps(`Opening Opay. Amount ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient} is locked. Just enter your PIN.`, currentIntent.language_detected);
       status.innerText = 'Redirecting to Opay...';
 
       localStorage.setItem('intent', JSON.stringify(currentIntent));
-      localStorage.setItem('opay_reference', data.reference);
+      localStorage.setItem('opay_reference', data.reference || data.data?.reference);
 
-      // THIS IS THE OPAY LINK USER CLICKS - AMOUNT + RECIPIENT PRE-FILLED
       setTimeout(() => {
-        window.location.href = data.paymentUrl;
-      }, 1000);
+        window.location.href = opayUrl;
+      }, 1500);
     } else {
       throw new Error(data.error || 'Failed to create link');
     }
@@ -627,6 +713,7 @@ window.resetMic = () => {
   status.innerText = 'Tap the mic to start';
   status.classList.remove('active');
   currentIntent = null;
+  conversationState = { amount: null, recipient: null, account_number: null, step: 'start' };
 };
 
 window.goDashboard = () => {
