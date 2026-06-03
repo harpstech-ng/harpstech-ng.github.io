@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#00D084">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="logo.png">
+<link rel="apple-touch-icon" href="IMG_6416.jpeg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -353,7 +353,7 @@ h1{
 <div class="container">
   <div class="logo-wrap">
     <div class="logo-glow"></div>
-    <img src="logo.png" class="logo" alt="Harps Tech Logo" onerror="this.style.display='none'">
+    <img src="IMG_6416.jpeg" class="logo" alt="Harps Tech Logo" onerror="this.style.display='none'">
   </div>
 
   <span class="badge">
@@ -389,8 +389,8 @@ h1{
 
   <div class="footer">
     <div class="security">
-      <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
-      Bank-grade 256-bit AES encryption
+      <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+      Secured by Opay
     </div>
   </div>
 </div>
@@ -435,42 +435,32 @@ onAuthStateChanged(auth, (user) => {
 
 localStorage.removeItem('harpsReply');
 
-// Load voices for multi-language TTS
 function loadVoices() {
   availableVoices = speechSynthesis.getVoices();
 }
 speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
-// UPGRADED: Multi-language TTS with Yoruba/Hausa/Igbo support
 function speakHarps(text, language = 'en') {
   return new Promise((resolve) => {
     speechSynthesis.cancel();
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(text);
-
-      // Language mapping - iOS/Android support varies
       const langMap = {
-        'en': 'en-NG', // Nigerian English
-        'yo': 'yo-NG', // Yoruba - iOS 17+ supports this
-        'ha': 'ha-NG', // Hausa
-        'ig': 'ig-NG', // Igbo
-        'pcm': 'en-NG' // Pidgin fallback to Nigerian English
+        'en': 'en-NG',
+        'yo': 'yo-NG',
+        'ha': 'ha-NG',
+        'ig': 'ig-NG',
+        'pcm': 'en-NG'
       };
-
       utterance.lang = langMap[language] || 'en-NG';
-
-      // Find best voice for the language
       const langVoice = availableVoices.find(v => v.lang.startsWith(langMap[language]?.split('-')[0]));
       if (langVoice) utterance.voice = langVoice;
-
       utterance.pitch = 0.9;
       utterance.rate = 0.95;
       utterance.volume = 1;
       utterance.onend = resolve;
       utterance.onerror = () => {
-        // Fallback to English if Yoruba fails
-        console.log('TTS failed for', language, 'falling back to English');
         utterance.lang = 'en-NG';
         speechSynthesis.speak(utterance);
         resolve();
@@ -486,10 +476,11 @@ let isListening = false;
 if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
-  // UPGRADE: Support multiple languages - browser will auto-detect
-  recognition.lang = 'en-NG'; // Primary, but will catch Yoruba/Hausa words too
-  recognition.continuous = false;
+  // UPGRADE FOR ELDERS: Continuous + longer silence timeout
+  recognition.lang = 'en-NG';
+  recognition.continuous = true; // Don't stop after first pause
   recognition.interimResults = true;
+  recognition.maxAlternatives = 3; // Get multiple guesses for unclear speech
 
   recognition.onstart = () => {
     isListening = true;
@@ -536,15 +527,12 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
 
         currentIntent = data;
 
-        // Show confidence
         confidenceBar.classList.add('show');
         confidenceFill.style.width = (data.confidence * 100) + '%';
 
         status.innerText = data.response;
-        // Speak in detected language
         await speakHarps(data.response, data.language_detected);
 
-        // Show confirm buttons only if we understood it well
         if (!data.needs_confirmation && data.intent === 'transfer' && data.amount > 0 && data.recipient) {
           confirmBox.classList.add('show');
         } else {
@@ -615,12 +603,12 @@ window.createOpayLink = async () => {
       await speakHarps(`Opening Opay. Just enter your PIN to complete.`, currentIntent.language_detected);
       status.innerText = 'Redirecting to Opay...';
 
-      // Save for flow.html if needed
       localStorage.setItem('intent', JSON.stringify(currentIntent));
       localStorage.setItem('opay_reference', data.reference);
 
+      // THIS IS THE OPAY LINK USER CLICKS - AMOUNT + RECIPIENT PRE-FILLED
       setTimeout(() => {
-        window.location.href = data.paymentUrl; // Opay link - amount+recipient prefilled
+        window.location.href = data.paymentUrl;
       }, 1000);
     } else {
       throw new Error(data.error || 'Failed to create link');
