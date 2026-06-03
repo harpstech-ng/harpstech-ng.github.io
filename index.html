@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VoicePay | Speak to Pay</title>
 
+<!-- LINK PREVIEW FOR WHATSAPP/TWITTER -->
+<meta property="og:title" content="VoicePay - Speak to Pay">
+<meta property="og:description" content="Send money, buy airtime, pay bills using your voice in English, Yoruba, Hausa, Igbo or Pidgin. Powered by Opay.">
+<meta property="og:image" content="https://harpstech-ng.github.io/IMG_6416.jpeg">
+<meta property="og:url" content="https://harpstech-ng.github.io/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="VoicePay - Speak to Pay">
+<meta name="twitter:description" content="Voice-authenticated payments powered by Groq AI">
+<meta name="twitter:image" content="https://harpstech-ng.github.io/IMG_6416.jpeg">
+
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#00D084">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -398,7 +409,7 @@ h1{
     </div>
   </div>
 
-  <p class="hint">"Send 5k to Seyi" • "Fi ẹgbẹrun mewa ranṣẹ si Mama" • "Tura dubu biyu zuwa Tunde"</p>
+  <p class="hint">"Send 5k to Seyi" • "Buy 2k airtime for Mama" • "Pay NEPA bill" • "Transfer to GTBank"</p>
   <div class="status-card" id="status">Tap the mic to start speaking</div>
 
   <div class="confirm-box" id="confirmBox">
@@ -422,6 +433,7 @@ h1{
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCv8Wz-zkn-Xt5yNO4j8opEeMwsOGCCv_8",
@@ -435,6 +447,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 const BACKEND_URL = 'https://harps-voicepay.onrender.com';
 const mic = document.getElementById('mic');
@@ -447,84 +460,136 @@ const loadingOpay = document.getElementById('loadingOpay');
 
 let currentIntent = null;
 let currentUser = null;
+let currentUserData = null;
 let availableVoices = [];
 let hasSpokenWelcome = false;
+let savedContacts = {}; // Loaded from Firebase
 
-// REMEMBERS ACCOUNTS + CONVERSATION STATE
-let conversationState = {
-  amount: null,
-  recipient: null,
+let conversationState = { 
+  amount: null, 
+  recipient: null, 
   account_number: null,
-  step: 'start'
+  bank: null,
+  phone: null,
+  intent: 'transfer', // transfer, airtime, bill
+  step: 'start' 
 };
 
-let savedContacts = JSON.parse(localStorage.getItem('harps_contacts') || '{}');
-
-onAuthStateChanged(auth, (user) => {
-  if (!user) window.location.href = '/login.html';
+onAuthStateChanged(auth, async (user) => {
+  if (!user) window.location.href = './login.html';
   else {
     currentUser = user;
-    localStorage.setItem('uid', user.uid);
-    // SPEAK WELCOME ON FIRST LOAD - ONLY AFTER USER INTERACTION
+    
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        currentUserData = userDoc.data();
+      }
+      
+      // LOAD CONTACTS FROM FIREBASE
+      const contactsQuery = query(
+        collection(db, 'contacts'),
+        where('userId', '==', user.uid)
+      );
+      const contactsSnapshot = await getDocs(contactsQuery);
+      contactsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        savedContacts[data.name] = {
+          account_number: data.account_number,
+          bank: data.bank || null,
+          phone: data.phone || null,
+          type: data.type || 'bank',
+          name: data.name
+        };
+      });
+      console.log('Loaded contacts from Firebase:', savedContacts);
+      
+    } catch (e) {
+      console.error('Error loading user data:', e);
+    }
+    
     setTimeout(() => {
       if (!hasSpokenWelcome) {
-        speakHarps('Hello. Tap the microphone and tell me who to send money to.', 'en');
+        const name = currentUserData?.displayName || 'there';
+        speakHarps(`Hello ${name}. Tap the microphone and tell me what to do.`, 'en');
         hasSpokenWelcome = true;
       }
     }, 500);
   }
 });
 
+// AGGRESSIVE FEMALE VOICE - CHROME + SAFARI FIX
 function loadVoices() {
   availableVoices = speechSynthesis.getVoices();
+  console.log('Available voices:', availableVoices.map(v => v.name + ' (' + v.lang + ')'));
 }
 speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
-// FORCE NIGERIAN WOMAN VOICE
+// FORCE WOMAN VOICE ONLY
 function speakHarps(text, language = 'en') {
   return new Promise((resolve) => {
     speechSynthesis.cancel();
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(text);
-
-      const langMap = {
-        'en': 'en-NG',
-        'yo': 'yo-NG',
-        'ha': 'ha-NG',
-        'ig': 'ig-NG',
-        'pcm': 'en-NG'
-      };
-      utterance.lang = langMap[language] || 'en-NG';
-
-      let femaleVoice = availableVoices.find(v =>
-        v.lang === 'en-NG' && v.name.toLowerCase().includes('female')
-      ) || availableVoices.find(v =>
-        v.lang === 'en-NG'
-      ) || availableVoices.find(v =>
-        v.name.includes('Google UK English Female')
-      ) || availableVoices.find(v =>
-        v.name.includes('Samantha')
-      ) || availableVoices.find(v =>
+      utterance.lang = 'en-NG';
+      
+      // PRIORITY 1: Google UK English Female - Chrome best female
+      let femaleVoice = availableVoices.find(v => v.name === 'Google UK English Female');
+      
+      // PRIORITY 2: Samantha - Safari best female
+      if (!femaleVoice) femaleVoice = availableVoices.find(v => v.name === 'Samantha');
+      
+      // PRIORITY 3: Nigerian English
+      if (!femaleVoice) femaleVoice = availableVoices.find(v => v.lang === 'en-NG');
+      
+      // PRIORITY 4: Any voice with "female" in name
+      if (!femaleVoice) femaleVoice = availableVoices.find(v => 
         v.name.toLowerCase().includes('female')
-      ) || availableVoices.find(v =>
+      );
+      
+      // PRIORITY 5: Any English voice NOT male
+      if (!femaleVoice) femaleVoice = availableVoices.find(v => 
         v.lang.startsWith('en') &&!v.name.toLowerCase().includes('male')
       );
-
+      
       if (femaleVoice) {
         utterance.voice = femaleVoice;
-        console.log('Using Nigerian woman voice:', femaleVoice.name);
+        console.log('Using FEMALE voice:', femaleVoice.name);
       }
-
-      utterance.pitch = 1.05;
-      utterance.rate = 0.82;
+      
+      // FORCE WOMAN SETTINGS
+      utterance.pitch = 1.2; // Higher = more feminine
+      utterance.rate = 0.85;
       utterance.volume = 1;
-
+      
       utterance.onend = resolve;
       utterance.onerror = resolve;
       speechSynthesis.speak(utterance);
     }, 150);
   });
+}
+
+// SAVE CONTACT TO FIREBASE
+async function saveContactToFirebase(contactData) {
+  if (!currentUser) return;
+  
+  try {
+    await addDoc(collection(db, 'contacts'), {
+      userId: currentUser.uid,
+      name: contactData.name,
+      account_number: contactData.account_number || null,
+      bank: contactData.bank || null,
+      phone: contactData.phone || null,
+      type: contactData.type || 'bank',
+      createdAt: serverTimestamp()
+    });
+    
+    savedContacts[contactData.name] = contactData;
+    console.log('Contact saved to Firebase:', contactData.name);
+  } catch (e) {
+    console.error('Error saving contact:', e);
+  }
 }
 
 let recognition;
@@ -546,7 +611,7 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
     confirmBox.classList.remove('show');
     transcriptLive.classList.add('show');
     confidenceBar.classList.remove('show');
-    speakHarps('I am listening. Speak your payment.', 'en');
+    speakHarps('I am listening.', 'en');
   };
 
   recognition.onend = () => {
@@ -573,19 +638,47 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
 
       try{
         let transcriptToSend = final;
-
+        
+        // SMART CONVERSATION FLOW
         if (conversationState.step === 'amount') {
           transcriptToSend = `Send ${final} to ${conversationState.recipient}`;
         } else if (conversationState.step === 'recipient') {
           transcriptToSend = `Send ${conversationState.amount} to ${final}`;
         } else if (conversationState.step === 'account_number') {
           conversationState.account_number = final.replace(/\D/g,'');
-          savedContacts[conversationState.recipient] = {
+          await saveContactToFirebase({
+            name: conversationState.recipient,
             account_number: conversationState.account_number,
-            name: conversationState.recipient
-          };
-          localStorage.setItem('harps_contacts', JSON.stringify(savedContacts));
+            type: 'bank'
+          });
           const confirmText = `Saved. Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient}?`;
+          status.innerText = confirmText;
+          await speakHarps(confirmText, 'en');
+          confirmBox.classList.add('show');
+          conversationState.step = 'confirm';
+          return;
+        } else if (conversationState.step === 'bank') {
+          conversationState.bank = final;
+          await saveContactToFirebase({
+            name: conversationState.recipient,
+            account_number: conversationState.account_number,
+            bank: conversationState.bank,
+            type: 'bank'
+          });
+          const confirmText = `Saved. Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient} at ${conversationState.bank}?`;
+          status.innerText = confirmText;
+          await speakHarps(confirmText, 'en');
+          confirmBox.classList.add('show');
+          conversationState.step = 'confirm';
+          return;
+        } else if (conversationState.step === 'phone') {
+          conversationState.phone = final.replace(/\D/g,'');
+          await saveContactToFirebase({
+            name: conversationState.recipient,
+            phone: conversationState.phone,
+            type: 'airtime'
+          });
+          const confirmText = `Saved. Buy ₦${conversationState.amount.toLocaleString()} airtime for ${conversationState.recipient}?`;
           status.innerText = confirmText;
           await speakHarps(confirmText, 'en');
           confirmBox.classList.add('show');
@@ -605,44 +698,69 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
 
         if (data.amount) conversationState.amount = data.amount;
         if (data.recipient) conversationState.recipient = data.recipient;
+        if (data.intent) conversationState.intent = data.intent;
 
         currentIntent = {
        ...data,
           amount: conversationState.amount,
           recipient: conversationState.recipient,
-          account_number: savedContacts[conversationState.recipient]?.account_number || null
+          account_number: savedContacts[conversationState.recipient]?.account_number || null,
+          bank: savedContacts[conversationState.recipient]?.bank || null,
+          phone: savedContacts[conversationState.recipient]?.phone || null,
+          intent: conversationState.intent
         };
 
         confidenceBar.classList.add('show');
         confidenceFill.style.width = (data.confidence * 100) + '%';
 
+        // SMART COLLECTION BASED ON INTENT
         if (!conversationState.amount && conversationState.recipient) {
           conversationState.step = 'amount';
-          const ask = `How much should I send to ${conversationState.recipient}, please?`;
+          const ask = `How much should I send to ${conversationState.recipient}?`;
           status.innerText = ask;
           await speakHarps(ask, data.language_detected);
-        }
+        } 
         else if (!conversationState.recipient && conversationState.amount) {
           conversationState.step = 'recipient';
-          const ask = `Send ₦${conversationState.amount.toLocaleString()} to who, please?`;
+          const ask = conversationState.intent === 'airtime' 
+            ? `Buy ₦${conversationState.amount.toLocaleString()} airtime for who?`
+            : `Send ₦${conversationState.amount.toLocaleString()} to who?`;
           status.innerText = ask;
           await speakHarps(ask, data.language_detected);
         }
         else if (conversationState.amount && conversationState.recipient) {
+          // CHECK IF WE KNOW THIS PERSON
           if (savedContacts[conversationState.recipient]) {
-            conversationState.account_number = savedContacts[conversationState.recipient].account_number;
+            const contact = savedContacts[conversationState.recipient];
+            conversationState.account_number = contact.account_number;
+            conversationState.bank = contact.bank;
+            conversationState.phone = contact.phone;
             conversationState.step = 'confirm';
-            const confirmText = `Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient}?`;
+            
+            let confirmText;
+            if (conversationState.intent === 'airtime') {
+              confirmText = `Buy ₦${conversationState.amount.toLocaleString()} airtime for ${conversationState.recipient}?`;
+            } else {
+              confirmText = `Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient}?`;
+            }
             status.innerText = confirmText;
             await speakHarps(confirmText, data.language_detected);
             confirmBox.classList.add('show');
           } else {
-            conversationState.step = 'account_number';
-            const ask = `This is my first time sending to ${conversationState.recipient}. Please say the account number.`;
-            status.innerText = ask;
-            await speakHarps(ask, data.language_detected);
+            // FIRST TIME - ASK FOR DETAILS BASED ON INTENT
+            if (conversationState.intent === 'airtime') {
+              conversationState.step = 'phone';
+              const ask = `First time sending to ${conversationState.recipient}. Please say their phone number.`;
+              status.innerText = ask;
+              await speakHarps(ask, data.language_detected);
+            } else {
+              conversationState.step = 'account_number';
+              const ask = `First time sending to ${conversationState.recipient}. Please say the account number.`;
+              status.innerText = ask;
+              await speakHarps(ask, data.language_detected);
+            }
           }
-        }
+        } 
         else {
           status.innerText = data.response;
           await speakHarps(data.response, data.language_detected);
@@ -701,6 +819,9 @@ window.createOpayLink = async () => {
         amount: conversationState.amount,
         recipient: conversationState.recipient,
         account_number: conversationState.account_number,
+        bank: conversationState.bank,
+        phone: conversationState.phone,
+        intent: conversationState.intent,
         narration: `VoicePay to ${conversationState.recipient}`,
         userId: currentUser.uid
       })
@@ -713,8 +834,19 @@ window.createOpayLink = async () => {
       await speakHarps(`Opening Opay. Amount ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient} is locked. Just enter your PIN.`, currentIntent.language_detected);
       status.innerText = 'Redirecting to Opay...';
 
-      localStorage.setItem('intent', JSON.stringify(currentIntent));
-      localStorage.setItem('opay_reference', data.reference || data.data?.reference);
+      // Save transaction to Firebase
+      await addDoc(collection(db, 'transactions'), {
+        userId: currentUser.uid,
+        amount: conversationState.amount,
+        recipient: conversationState.recipient,
+        account_number: conversationState.account_number,
+        bank: conversationState.bank,
+        phone: conversationState.phone,
+        intent: conversationState.intent,
+        reference: data.reference || data.data?.reference,
+        status: 'pending',
+        createdAt: serverTimestamp()
+      });
 
       setTimeout(() => {
         window.location.href = opayUrl;
@@ -736,17 +868,25 @@ window.resetMic = () => {
   status.innerText = 'Tap the mic to start';
   status.classList.remove('active');
   currentIntent = null;
-  conversationState = { amount: null, recipient: null, account_number: null, step: 'start' };
+  conversationState = { 
+    amount: null, 
+    recipient: null, 
+    account_number: null,
+    bank: null,
+    phone: null,
+    intent: 'transfer',
+    step: 'start' 
+  };
 };
 
 window.goDashboard = () => {
-  window.location.href = '/dashboard.html';
+  window.location.href = './dashboard.html';
 };
 
 window.logout = async () => {
   await signOut(auth);
   localStorage.clear();
-  window.location.href = '/login.html';
+  window.location.href = './login.html';
 };
 </script>
 
