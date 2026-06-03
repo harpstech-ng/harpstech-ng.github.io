@@ -108,8 +108,8 @@ h2{
   margin:12px 0;
   font-size:15px;
 }
-.row .label{color:#aaa}
-.row .value{font-weight:600}
+.row.label{color:#aaa}
+.row.value{font-weight:600}
 .voice-quote{
   font-style:italic;
   color:#a8a8a8;
@@ -181,12 +181,12 @@ h2{
 .history-amount{
   text-align:right;
 }
-.history-amount .amount{
+.history-amount.amount{
   font-size:16px;
   font-weight:700;
   color:white;
 }
-.history-amount .time{
+.history-amount.time{
   font-size:11px;
   color:#666;
   margin-top:2px;
@@ -293,15 +293,15 @@ h2{
     <span class="label">Ref</span>
     <span class="value" id="ref" style="font-size:11px">-</span>
   </div>
-  
+
   <div class="voice-quote" id="voiceText">"Loading voice receipt..."</div>
-  
+
   <div class="voiceprint-check" id="voicePrintNotice">
     🔒 Voice Print Required: Tap mic and say "Confirm payment" to approve ₦<span id="vpAmount"></span>
   </div>
-  
+
   <button class="btn" onclick="speakReceipt()">
-    <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z"/></svg>
+    <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415A3.984 3.984 0 0013 10a3.983 0 00-1.172-2.828 1 1 0 010-1.415z"/></svg>
     Play Voice Receipt
   </button>
 </div>
@@ -348,6 +348,59 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const BACKEND_URL = 'https://harps-voicepay.onrender.com';
 
+let availableVoices = [];
+
+// LOAD NIGERIAN WOMAN VOICE - SAME AS INDEX.HTML
+function loadVoices() {
+  availableVoices = speechSynthesis.getVoices();
+}
+speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+// NIGERIAN WOMAN VOICE FUNCTION - NO MORE ROBOT
+function speakHarps(text, language = 'en') {
+  return new Promise((resolve) => {
+    speechSynthesis.cancel();
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      
+      const langMap = {
+        'en': 'en-NG',
+        'yo': 'yo-NG', 
+        'ha': 'ha-NG',
+        'ig': 'ig-NG',
+        'pcm': 'en-NG'
+      };
+      utterance.lang = langMap[language] || 'en-NG';
+      
+      // PICK FEMALE VOICE - Nigerian > UK Female > Samantha > Any female
+      let femaleVoice = availableVoices.find(v => 
+        v.lang === 'en-NG' && v.name.toLowerCase().includes('female')
+      ) || availableVoices.find(v => 
+        v.lang === 'en-NG'
+      ) || availableVoices.find(v => 
+        v.name.includes('Google UK English Female')
+      ) || availableVoices.find(v => 
+        v.name.includes('Samantha')
+      ) || availableVoices.find(v => 
+        v.name.toLowerCase().includes('female')
+      ) || availableVoices.find(v => 
+        v.lang.startsWith('en') &&!v.name.toLowerCase().includes('male')
+      );
+      
+      if (femaleVoice) utterance.voice = femaleVoice;
+      
+      utterance.pitch = 1.05; // Warm, not robotic
+      utterance.rate = 0.82; // Slower for elders
+      utterance.volume = 1; // Loud
+      
+      utterance.onend = resolve;
+      utterance.onerror = resolve;
+      speechSynthesis.speak(utterance);
+    }, 150);
+  });
+}
+
 const receipt = JSON.parse(localStorage.getItem('receipt') || 'null');
 if(!receipt) {
   document.querySelector('.card').style.display = 'none';
@@ -358,13 +411,11 @@ if(!receipt) {
   document.getElementById('time').innerText = timeAgo(receipt.date);
   document.getElementById('ref').innerText = receipt.reference || receipt.txnId || '-';
 
-  // Show voice print notice if > 10k
   if (receipt.amount > 10000) {
     document.getElementById('vpAmount').innerText = receipt.amount.toLocaleString();
     document.getElementById('voicePrintNotice').style.display = 'block';
   }
 
-  // Generate voice receipt - this proves Opay link was pre-filled
   fetch(BACKEND_URL+'/generate-receipt',{
     method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
@@ -432,30 +483,26 @@ function timeAgo(timestamp) {
   return `${days}d ago`;
 }
 
-// BETTER VOICE CLARITY - Speaks like a human, not robot
+// USE NIGERIAN WOMAN VOICE NOW
 window.speakReceipt = function() {
   const text = document.getElementById('voiceText').innerText.replace(/"/g,'');
-  if('speechSynthesis' in window){
-    speechSynthesis.cancel(); // Stop any previous speech
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-NG'; // Nigerian English
-    utterance.pitch = 1.0; // Natural pitch
-    utterance.rate = 0.9; // Slightly slower for elders
-    utterance.volume = 1.0; // Max volume
-    speechSynthesis.speak(utterance);
-  } else {
-    alert('Voice not supported on this device');
-  }
+  speakHarps(text, 'en');
 }
 
-window.checkBalance = function() {
-  const text = "Checking your Opay balance ma. You have one hundred and twenty five thousand naira available.";
-  speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'en-NG';
-  utterance.pitch = 1.0;
-  utterance.rate = 0.9;
-  speechSynthesis.speak(utterance);
+// FIXED BALANCE CHECK - NO MORE FAKE "125k"
+window.checkBalance = async function() {
+  // We don't know real balance - so we tell user to check Opay
+  const text = "To check your real Opay balance, please open your Opay app. I don't have access to your account balance.";
+  await speakHarps(text, 'en');
+  
+  // Optional: If you want to show last transaction instead
+  const history = JSON.parse(localStorage.getItem('harps_history') || '[]');
+  if (history.length > 0) {
+    const lastTx = history[0];
+    setTimeout(() => {
+      speakHarps(`Your last payment was ₦${lastTx.amount.toLocaleString()} to ${lastTx.recipient}, ${timeAgo(lastTx.date)}.`, 'en');
+    }, 3000);
+  }
 }
 
 window.disputeTransaction = async function(ref) {
