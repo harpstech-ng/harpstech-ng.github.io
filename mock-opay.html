@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>OPay Checkout</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body{font-family:-apple-system,Arial;text-align:center;padding:20px;background:#f5f5f5;margin:0}
+   .card{background:white;padding:30px;border-radius:16px;max-width:400px;margin:20px auto;box-shadow:0 4px 20px rgba(0,0,0,0.08)}
+   .logo{width:80px;margin-bottom:10px}
+    h2{color:#1A1A1A;font-size:20px;margin:10px 0 20px}
+   .amount{font-size:36px;color:#00B875;font-weight:700;margin:20px 0}
+   .locked{background:#F7F7F7;padding:16px;border-radius:10px;color:#555;font-size:14px;margin:12px 0;text-align:left}
+   .locked b{color:#1A1A1A}
+    button{background:#00B875;color:white;border:none;padding:16px;width:100%;border-radius:10px;font-size:16px;font-weight:600;margin-top:20px;cursor:pointer}
+   .note{font-size:11px;color:#999;margin-top:25px}
+   .badge{background:#FFF3CD;color:#856404;padding:6px 12px;border-radius:6px;font-size:12px;display:inline-block;margin-bottom:15px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">Sandbox Environment</div>
+    <img src="IMG_6416.jpeg" class="logo" alt="Opay Logo">
+    <h2>OPay Checkout</h2>
+    <div class="locked">Transfer to: <b id="name"></b></div>
+    <div class="amount">₦<span id="amt"></span></div>
+    <div class="locked">✓ Amount locked by merchant<br>✓ Cannot be modified</div>
+    <button onclick="paySuccess()">Pay Now</button>
+    <div class="note">HarpsPay Demo - Transaction will not be processed</div>
+  </div>
+<script>
+const p = new URLSearchParams(location.search);
+const amt = parseInt(p.get('amount') || '0') / 100;
+document.getElementById('amt').textContent = amt.toLocaleString('en-NG', {minimumFractionDigits:2, maximumFractionDigits:2});
+document.getElementById('name').textContent = p.get('name') || 'Recipient';
+function paySuccess(){
+  alert('Demo Complete!\n\nIn production: User would complete payment in OPay app.\n\nFor judges: This shows the exact UX - amount is LOCKED and pre-filled from Harps voice command.');
+  window.location.href = 'https://harpstech-ng.github.io/HarpsPay/dashboard.html?payment=success&ref=' + p.get('ref');
+}
+</script>
+</body>
+</html>
