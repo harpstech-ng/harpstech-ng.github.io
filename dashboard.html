@@ -3,263 +3,340 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Harps VoicePay | Dashboard</title>
+<title>VoicePay | Dashboard</title>
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#00D084">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="IMG_6416.jpeg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
 :root{
   --green:#00D084;
-  --bg:#0a0a0a;
-  --card:rgba(255,255,255,0.04);
-  --border:rgba(255,255,255,0.12);
+  --green-glow:rgba(0,208,132,0.3);
+  --bg:#0A0A0F;
+  --card:rgba(255,255,255,0.03);
+  --card-hover:rgba(255,255,255,0.06);
+  --border:rgba(255,255,255,0.08);
+  --text-muted:#8A8A9E;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{
-  background:radial-gradient(1000px 600px at 50% -10%, rgba(0,208,132,0.12), transparent 60%), #0a0a0a;
+  background:
+    radial-gradient(1200px 700px at 50% -15%, rgba(0,208,132,0.18), transparent 60%),
+    radial-gradient(900px 500px at 90% 100%, rgba(138,43,226,0.1), transparent 50%),
+    var(--bg);
   color:white;
-  font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  padding:24px 20px 40px;
+  font-family:'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  padding:24px 16px 40px;
+  min-height:100vh;
 }
 .top{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  margin-bottom:24px;
+  margin-bottom:32px;
+  padding:16px 0;
+  backdrop-filter:blur(20px);
 }
 .logo-wrap{
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:12px;
 }
 .logo{
-  width:36px;
-  height:36px;
-  border-radius:10px;
+  width:40px;
+  height:40px;
+  border-radius:12px;
+  box-shadow:0 8px 24px rgba(0,208,132,0.25);
+}
+.logo-text{
+  font-weight:700;
+  font-size:20px;
+  background:linear-gradient(135deg, #fff 30%, #8A8A9E);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
 }
 .team{
   font-size:12px;
-  color:#666;
+  color:var(--text-muted);
+  font-weight:500;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.team-dot{
+  width:6px;
+  height:6px;
+  background:var(--green);
+  border-radius:50%;
+  box-shadow:0 0 10px var(--green-glow);
+  animation:pulse-dot 2s infinite;
+}
+@keyframes pulse-dot{
+ 0%,100%{opacity:1}
+ 50%{opacity:0.4}
 }
 .badge{
   display:inline-flex;
   align-items:center;
   gap:6px;
-  padding:4px 10px;
+  padding:6px 14px;
   border-radius:999px;
-  background:rgba(0,208,132,0.12);
+  background:linear-gradient(135deg, rgba(0,208,132,0.15), rgba(0,208,132,0.05));
+  border:1px solid rgba(0,208,132,0.2);
   color:var(--green);
-  font-size:11px;
+  font-size:12px;
   font-weight:600;
-  margin-bottom:14px;
+  margin-bottom:20px;
+  backdrop-filter:blur(10px);
 }
-.badge svg{width:13px;height:13px}
+.badge svg{width:14px;height:14px}
 h2{
-  font-size:24px;
+  font-size:28px;
   font-weight:700;
-  margin-bottom:4px;
+  margin-bottom:8px;
+  background:linear-gradient(135deg, #fff 30%, #8A8A9E);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
 }
 .sub{
-  color:#a8a8a8;
-  font-size:13px;
-  margin-bottom:20px;
+  color:var(--text-muted);
+  font-size:14px;
+  margin-bottom:28px;
+  font-weight:400;
 }
 .card{
   background:var(--card);
   border:1px solid var(--border);
-  padding:22px;
-  border-radius:18px;
-  margin-bottom:18px;
+  padding:24px;
+  border-radius:20px;
+  margin-bottom:20px;
+  backdrop-filter:blur(20px);
+  transition:all 0.3s ease;
+}
+.card:hover{
+  background:var(--card-hover);
+  border-color:rgba(0,208,132,0.2);
+  transform:translateY(-2px);
 }
 .card h3{
   color:var(--green);
-  font-size:14px;
+  font-size:13px;
   font-weight:600;
-  margin-bottom:16px;
+  margin-bottom:20px;
   text-transform:uppercase;
   letter-spacing:0.5px;
 }
-.big-amount{
-  font-size:40px;
-  font-weight:700;
-  color:white;
-  text-align:center;
-  margin:8px 0 4px;
+.success-card{
+  background:linear-gradient(135deg, rgba(0,208,132,0.12), rgba(0,208,132,0.03));
+  border:1px solid rgba(0,208,132,0.25);
 }
 .success-icon{
-  width:60px;
-  height:60px;
-  margin:0 auto 16px;
-  background:var(--green);
+  width:70px;
+  height:70px;
+  margin:0 auto 20px;
+  background:linear-gradient(135deg, var(--green), #00A866);
   border-radius:50%;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:30px;
+  font-size:36px;
+  box-shadow:0 10px 40px rgba(0,208,132,0.4);
+  animation:success-bounce 0.6s ease;
+}
+@keyframes success-bounce{
+  0%{transform:scale(0)}
+  50%{transform:scale(1.1)}
+  100%{transform:scale(1)}
+}
+.big-amount{
+  font-size:44px;
+  font-weight:700;
+  color:white;
+  text-align:center;
+  margin:12px 0 8px;
+  letter-spacing:-1px;
 }
 .row{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  margin:12px 0;
+  margin:14px 0;
   font-size:15px;
 }
-.row.label{color:#aaa}
+.row.label{color:var(--text-muted)}
 .row.value{font-weight:600}
 .voice-quote{
   font-style:italic;
-  color:#a8a8a8;
+  color:#C8C8D0;
   font-size:14px;
   text-align:center;
-  margin:16px 0;
-  padding:12px;
+  margin:20px 0;
+  padding:16px;
   background:rgba(0,208,132,0.08);
-  border-radius:12px;
+  border-radius:14px;
   border:1px solid rgba(0,208,132,0.2);
+  line-height:1.5;
 }
 .btn{
   width:100%;
-  padding:15px;
+  padding:17px;
   border:none;
-  border-radius:12px;
-  background:var(--green);
-  color:#0a0a0a;
+  border-radius:14px;
+  background:linear-gradient(135deg, var(--green), #00A866);
+  color:#000;
   font-weight:700;
   font-size:16px;
-  margin-top:12px;
+  margin-top:14px;
   cursor:pointer;
-  transition:transform 0.08s ease;
+  transition:all 0.2s ease;
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:8px;
+  gap:10px;
+  box-shadow:0 10px 30px rgba(0,208,132,0.3);
+  font-family:'Space Grotesk', sans-serif;
+}
+.btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 15px 40px rgba(0,208,132,0.4);
 }
 .btn:active{transform:scale(0.98)}
 .btn-secondary{
-  background:rgba(255,255,255,0.08);
+  background:var(--card);
   color:white;
   border:1px solid var(--border);
+  box-shadow:none;
+  backdrop-filter:blur(10px);
 }
-.btn svg{width:18px;height:18px}
+.btn-secondary:hover{
+  background:var(--card-hover);
+  border-color:rgba(0,208,132,0.3);
+}
+.btn svg{width:20px;height:20px}
 .history-item{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:14px 0;
+  padding:16px 0;
   border-bottom:1px solid var(--border);
+  transition:all 0.2s ease;
 }
 .history-item:last-child{border-bottom:none}
+.history-item:hover{
+  background:rgba(255,255,255,0.02);
+  margin:0 -24px;
+  padding:16px 24px;
+  border-radius:12px;
+}
 .history-left{
   display:flex;
   align-items:center;
-  gap:12px;
+  gap:14px;
   flex:1;
 }
 .history-icon{
-  width:40px;
-  height:40px;
-  border-radius:50%;
-  background:rgba(0,208,132,0.15);
+  width:44px;
+  height:44px;
+  border-radius:12px;
+  background:linear-gradient(135deg, rgba(0,208,132,0.2), rgba(0,208,132,0.1));
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:18px;
+  font-size:20px;
 }
 .history-details h4{
   font-size:15px;
   font-weight:600;
-  margin-bottom:2px;
+  margin-bottom:4px;
 }
 .history-details p{
   font-size:12px;
-  color:#888;
+  color:var(--text-muted);
 }
 .history-amount{
   text-align:right;
 }
 .history-amount.amount{
-  font-size:16px;
+  font-size:17px;
   font-weight:700;
   color:white;
 }
 .history-amount.time{
   font-size:11px;
-  color:#666;
-  margin-top:2px;
+  color:var(--text-muted);
+  margin-top:4px;
 }
 .empty{
   text-align:center;
-  color:#666;
+  color:var(--text-muted);
   font-size:14px;
-  padding:30px 0;
+  padding:40px 0;
 }
 .footer{
   text-align:center;
-  margin-top:24px;
+  margin-top:32px;
   font-size:12px;
-  color:#666;
+  color:var(--text-muted);
 }
 .student-badge-dash{
   display:inline-flex;
   align-items:center;
-  gap:6px;
-  padding:6px 12px;
+  gap:8px;
+  padding:8px 16px;
   background:rgba(255,149,0,0.15);
   border:1px solid rgba(255,149,0,0.3);
   color:#ff9500;
   border-radius:999px;
-  font-size:12px;
+  font-size:13px;
   font-weight:600;
-  margin-bottom:14px;
+  margin-bottom:20px;
+  backdrop-filter:blur(10px);
 }
-.dispute-btn{
-  background:rgba(255,59,48,0.15);
-  border:1px solid rgba(255,59,48,0.3);
-  color:#ff3b30;
-  font-size:11px;
-  padding:4px 10px;
-  border-radius:8px;
-  cursor:pointer;
-  margin-top:6px;
-  display:inline-block;
-}
-.dispute-btn:active{transform:scale(0.95)}
 .voice-active{
   display:inline-flex;
   align-items:center;
-  gap:6px;
-  padding:4px 10px;
+  gap:8px;
+  padding:6px 14px;
   background:rgba(0,208,132,0.1);
   border:1px solid rgba(0,208,132,0.2);
   color:var(--green);
   border-radius:999px;
-  font-size:11px;
+  font-size:12px;
   font-weight:600;
+  backdrop-filter:blur(10px);
 }
-.voice-active svg{width:12px;height:12px}
+.voice-active svg{width:14px;height:14px}
 .voiceprint-check{
   background:rgba(255,149,0,0.1);
   border:1px solid rgba(255,149,0,0.3);
   color:#ff9500;
-  padding:12px;
-  border-radius:12px;
+  padding:14px;
+  border-radius:14px;
   font-size:13px;
-  margin:12px 0;
+  margin:16px 0;
   display:none;
+  line-height:1.5;
 }
 </style>
 </head>
 <body>
 <div class="top">
   <div class="logo-wrap">
-    <img src="IMG_6416.jpeg" class="logo" alt="Harps" onerror="this.style.display='none'">
-    <span style="font-weight:700;font-size:18px">Harps</span>
+    <img src="IMG_6416.jpeg" class="logo" alt="VoicePay" onerror="this.style.display='none'">
+    <span class="logo-text">VoicePay</span>
   </div>
-  <span class="team">Tech Pay Team</span>
+  <div class="team">
+    <span class="team-dot"></span>
+    VoicePay Team
+  </div>
 </div>
 
 <span class="badge">
@@ -274,7 +351,7 @@ h2{
   🎓 Student Account - ₦10,000 daily limit
 </div>
 
-<div class="card">
+<div class="card success-card">
   <div class="success-icon">✓</div>
   <div class="big-amount" id="amount">₦0</div>
   <div class="row">
@@ -301,7 +378,7 @@ h2{
   </div>
 
   <button class="btn" onclick="speakReceipt()">
-    <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415A3.984 3.984 0 0013 10a3.983 0 00-1.172-2.828 1 1 0 010-1.415z"/></svg>
+    <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415A3.984 3.984 0 0013 10a3.983 0 00-1.172-2.828 1 1 0 010-1.415z"/></svg>
     Play Voice Receipt
   </button>
 </div>
@@ -324,7 +401,7 @@ h2{
 <button class="btn btn-secondary" onclick="logout()">Logout</button>
 
 <div class="footer">
-  <div class="voice-active" style="margin-bottom:8px">
+  <div class="voice-active" style="margin-bottom:12px">
     <svg fill="currentColor" viewBox="0 0 20 20"><path d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4z"/><path d="M5.5 9.5a.5.5 0 01.5.5v1a4 4 0 004 4h.01a4 4 0 004-4v-1a.5.5 0 011 0v1a5 5 0 01-4.5 4.975V18h1a.5.5 0 010 1h-3a.5.5 0 010-1h1v-2.025A5 5 0 015 11v-1a.5.5 0 01.5-.5z"/></svg>
     Voice Biometrics Active
   </div>
@@ -350,30 +427,23 @@ const BACKEND_URL = 'https://harps-voicepay.onrender.com';
 
 let availableVoices = [];
 
-// LOAD NIGERIAN WOMAN VOICE - SAME AS INDEX.HTML
+// FORCE LOAD NIGERIAN WOMAN VOICE
 function loadVoices() {
   availableVoices = speechSynthesis.getVoices();
+  console.log('Voices loaded:', availableVoices.length);
 }
 speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
-// NIGERIAN WOMAN VOICE FUNCTION - NO MORE ROBOT
+// NIGERIAN WOMAN VOICE - FORCED
 function speakHarps(text, language = 'en') {
   return new Promise((resolve) => {
     speechSynthesis.cancel();
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-NG';
       
-      const langMap = {
-        'en': 'en-NG',
-        'yo': 'yo-NG', 
-        'ha': 'ha-NG',
-        'ig': 'ig-NG',
-        'pcm': 'en-NG'
-      };
-      utterance.lang = langMap[language] || 'en-NG';
-      
-      // PICK FEMALE VOICE - Nigerian > UK Female > Samantha > Any female
+      // FORCE FEMALE VOICE SELECTION
       let femaleVoice = availableVoices.find(v => 
         v.lang === 'en-NG' && v.name.toLowerCase().includes('female')
       ) || availableVoices.find(v => 
@@ -385,14 +455,17 @@ function speakHarps(text, language = 'en') {
       ) || availableVoices.find(v => 
         v.name.toLowerCase().includes('female')
       ) || availableVoices.find(v => 
-        v.lang.startsWith('en') &&!v.name.toLowerCase().includes('male')
+        v.lang.startsWith('en') && !v.name.toLowerCase().includes('male')
       );
       
-      if (femaleVoice) utterance.voice = femaleVoice;
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+        console.log('Using voice:', femaleVoice.name);
+      }
       
-      utterance.pitch = 1.05; // Warm, not robotic
-      utterance.rate = 0.82; // Slower for elders
-      utterance.volume = 1; // Loud
+      utterance.pitch = 1.05; // WOMAN VOICE - higher pitch
+      utterance.rate = 0.82; // SLOWER for elders
+      utterance.volume = 1;
       
       utterance.onend = resolve;
       utterance.onerror = resolve;
@@ -403,7 +476,7 @@ function speakHarps(text, language = 'en') {
 
 const receipt = JSON.parse(localStorage.getItem('receipt') || 'null');
 if(!receipt) {
-  document.querySelector('.card').style.display = 'none';
+  document.querySelector('.success-card').style.display = 'none';
 } else {
   document.getElementById('amount').innerText = '₦' + receipt.amount.toLocaleString();
   document.getElementById('recipient').innerText = receipt.recipient || '-';
@@ -461,7 +534,6 @@ function loadHistory() {
         <div class="history-details">
           <h4>${tx.recipient}</h4>
           <p>${tx.bank || 'Opay'} • ${tx.intent || 'transfer'}</p>
-          <button class="dispute-btn" onclick="disputeTransaction('${tx.reference}')">Report Issue</button>
         </div>
       </div>
       <div class="history-amount">
@@ -483,40 +555,22 @@ function timeAgo(timestamp) {
   return `${days}d ago`;
 }
 
-// USE NIGERIAN WOMAN VOICE NOW
 window.speakReceipt = function() {
   const text = document.getElementById('voiceText').innerText.replace(/"/g,'');
   speakHarps(text, 'en');
 }
 
-// FIXED BALANCE CHECK - NO MORE FAKE "125k"
+// NO MORE FAKE BALANCE
 window.checkBalance = async function() {
-  // We don't know real balance - so we tell user to check Opay
   const text = "To check your real Opay balance, please open your Opay app. I don't have access to your account balance.";
   await speakHarps(text, 'en');
   
-  // Optional: If you want to show last transaction instead
   const history = JSON.parse(localStorage.getItem('harps_history') || '[]');
   if (history.length > 0) {
     const lastTx = history[0];
     setTimeout(() => {
       speakHarps(`Your last payment was ₦${lastTx.amount.toLocaleString()} to ${lastTx.recipient}, ${timeAgo(lastTx.date)}.`, 'en');
     }, 3000);
-  }
-}
-
-window.disputeTransaction = async function(ref) {
-  if (confirm('Report this transaction as unauthorized? Harps security team will investigate within 24hrs.')) {
-    try {
-      await fetch(BACKEND_URL + '/dispute-transaction', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ reference: ref, userId: auth.currentUser.uid })
-      });
-      alert('Dispute filed successfully. We\'ll contact you soon.');
-    } catch (e) {
-      alert('Failed to file dispute. Try again.');
-    }
   }
 }
 
