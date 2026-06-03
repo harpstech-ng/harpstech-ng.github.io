@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#00D084">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="logo.png">
+<link rel="apple-touch-icon" href="IMG_6416.jpeg">
 
 <style>
 :root{
@@ -45,8 +45,8 @@ body{
   margin-bottom:20px;
 }
 .logo{
-  width:72px;
-  height:72px;
+  width:90px;
+  height:90px;
   margin:0 auto 12px;
   display:block;
   border-radius:18px;
@@ -277,12 +277,19 @@ input:focus{
   margin-top:8px;
   margin-left:28px;
 }
+.privacy-notice{
+  font-size:11px;
+  color:#888;
+  text-align:center;
+  margin-top:12px;
+  line-height:1.4;
+}
 </style>
 </head>
 <body>
 <div class="card">
   <div class="brand">
-    <img src="logo.png" class="logo" alt="Harps Tech Logo" onerror="this.style.display='none'">
+    <img src="IMG_6416.jpeg" class="logo" alt="Harps Tech Logo" onerror="this.style.display='none'">
     <span class="badge">
       <svg fill="currentColor" viewBox="0 0 20 20"><path d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM8 15V9h4v6H8z"/></svg>
       Powered by Opay
@@ -295,14 +302,12 @@ input:focus{
   <div class="error" id="error"></div>
   <div class="success" id="success"></div>
   
-  <!-- Step Indicator for Signup -->
   <div class="step-indicator" id="stepIndicator" style="display:none">
     <div class="step-dot active" id="sdot1"></div>
     <div class="step-dot" id="sdot2"></div>
     <div class="step-dot" id="sdot3"></div>
   </div>
   
-  <!-- STEP 1: Email/Password -->
   <div id="stepAuth">
     <input type="email" id="email" placeholder="Email" autocomplete="email">
     <div class="input-group" id="passGroup">
@@ -311,9 +316,9 @@ input:focus{
     </div>
     <button class="btn" id="mainBtn" onclick="handleAuth()">Login</button>
     <a href="#" class="link" onclick="forgotPass()">Forgot Password?</a>
+    <p class="privacy-notice">🔒 Secured by Opay. We never store your password.</p>
   </div>
 
-  <!-- STEP 2: Age Declaration - Replaced NIN -->
   <div id="stepAge" style="display:none">
     <div class="student-badge" id="studentBadge" style="display:none">
       🎓 Student Account - ₦10,000 daily limit
@@ -334,7 +339,6 @@ input:focus{
     <button class="btn btn-secondary" onclick="backToAuth()" style="margin-top:8px">Back</button>
   </div>
 
-  <!-- STEP 3: Voice Verification - Only for Signup -->
   <div id="stepVoice" style="display:none">
     <div class="voice-box">
       <button class="voice-btn" id="voiceBtn" onclick="recordVoice()">🎤</button>
@@ -359,7 +363,7 @@ input:focus{
   <div class="footer">
     <div class="security">
       <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
-      Bank-grade 256-bit AES encryption
+      Secured by Opay
     </div>
     <div>Harps Tech Pay Team</div>
   </div>
@@ -369,7 +373,6 @@ input:focus{
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// Your Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCv8Wz-zkn-Xt5yNO4j8opEeMwsOGCCv_8",
   authDomain: "harps-voicepay.firebaseapp.com",
@@ -399,7 +402,6 @@ const phrases = [
   "Send money with my voice"
 ];
 
-// Auto redirect if logged in
 onAuthStateChanged(auth, (user) => {
   if (user) window.location.href = '/index.html';
 });
@@ -436,7 +438,6 @@ function showStep(stepId) {
   });
   document.getElementById(stepId).style.display = 'block';
   
-  // Update step dots
   if (!isLogin) {
     ['sdot1','sdot2','sdot3'].forEach((id,i) => {
       document.getElementById(id).classList.toggle('active', i < signupStep);
@@ -466,7 +467,6 @@ window.handleAuth = async () => {
       localStorage.setItem('uid',user.user.uid);
       window.location.href='/index.html';
     }else{
-      // Signup flow - go to Age step
       tempUserData = {email, pass};
       signupStep = 2;
       showStep('stepAge');
@@ -566,11 +566,9 @@ window.completeSignup = async () => {
   btn.innerText = 'Creating account...';
 
   try {
-    // Create Firebase user
     const userCred = await createUserWithEmailAndPassword(auth, tempUserData.email, tempUserData.pass);
     const uid = userCred.user.uid;
 
-    // Upload voice data to backend
     const formData = new FormData();
     voiceRecordings.forEach((blob, i) => {
       formData.append(`voice`, blob);
@@ -608,8 +606,8 @@ window.resetPass = async () => {
   
   try{
     await sendPasswordResetEmail(auth,email);
-    showSuccess('Reset link sent! Check your email');
-    setTimeout(()=>location.reload(),2000);
+    showSuccess('Reset link sent! Check your email inbox AND spam folder 📧');
+    setTimeout(()=>location.reload(),3000);
   }catch(e){
     showError(getErrorMsg(e.code));
     btn.disabled = false;
@@ -645,7 +643,6 @@ function clearMsg(){
 }
 </script>
 
-<!-- Service Worker Registration - Added -->
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
