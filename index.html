@@ -412,6 +412,91 @@ h1{
   font-size:15px;
   cursor:pointer;
 }
+
+/* ABOUT BUTTON + MODAL */
+.about-btn{
+  position:fixed;
+  bottom:20px;
+  left:20px;
+  background:rgba(255,255,255,0.9);
+  border:1px solid var(--border);
+  padding:10px 16px;
+  border-radius:12px;
+  font-size:13px;
+  font-weight:600;
+  color:#000;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.08);
+  z-index:100;
+}
+.about-btn svg{width:16px;height:16px}
+.modal-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.7);
+  backdrop-filter:blur(10px);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:1000;
+  padding:20px;
+}
+.modal-overlay.show{display:flex}
+.modal-content{
+  background:var(--card);
+  border-radius:20px;
+  max-width:500px;
+  width:100%;
+  animation:modal-pop 0.3s ease;
+}
+@keyframes modal-pop{
+  from{opacity:0;transform:scale(0.9)}
+  to{opacity:1;transform:scale(1)}
+}
+.modal-header{
+  padding:24px 24px 16px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.modal-header h3{margin:0;font-size:20px}
+.close-btn{
+  background:none;
+  border:none;
+  font-size:28px;
+  cursor:pointer;
+  color:var(--text-muted);
+  line-height:1;
+}
+.modal-body{padding:24px}
+.team-links{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-top:20px;
+}
+.pdf-btn{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:14px;
+  background:linear-gradient(135deg, #F9FAFB, #F3F4F6);
+  border:1px solid var(--border);
+  border-radius:12px;
+  text-decoration:none;
+  color:var(--text);
+  font-weight:600;
+  transition:all 0.2s ease;
+}
+.pdf-btn:hover{
+  border-color:var(--green);
+  background:rgba(0,208,132,0.05);
+}
+.pdf-btn svg{width:20px;height:20px;color:var(--green)}
 </style>
 </head>
 <body>
@@ -440,7 +525,7 @@ h1{
   <h1>Speak Your Payment</h1>
   <p class="sub">Voice-authenticated payments powered by Groq AI</p>
   <p class="bio">
-    <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/></svg>
+    <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/></svg>
     Tap mic and speak naturally in English, Yoruba, Hausa, Igbo or Pidgin
   </p>
 
@@ -478,6 +563,38 @@ h1{
     <div class="security">
       <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
       Secured by Opay
+    </div>
+  </div>
+</div>
+
+<!-- ABOUT BUTTON -->
+<button class="about-btn" onclick="showAbout()">
+  <svg fill="currentColor" viewBox="0 0 20 20"><path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"/></svg>
+  About VoicePay
+</button>
+
+<!-- ABOUT MODAL -->
+<div class="modal-overlay" id="aboutModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>About VoicePay</h3>
+      <button class="close-btn" onclick="closeAbout()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p><strong>Built by HarpsTech Team</strong></p>
+      <p>VoicePay - Africa's first voice-authenticated payment system for the financially excluded.</p>
+      <p style="margin-top:12px;font-size:14px;color:var(--text-muted)">Supports English, Yoruba, Hausa, Igbo & Pidgin. Powered by Groq AI + Opay.</p>
+
+      <div class="team-links">
+        <a href="./VoicePay-Slides.pdf" target="_blank" class="pdf-btn">
+          <svg fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
+          View Pitch Deck
+        </a>
+        <a href="https://github.com/harpstech-ng" target="_blank" class="pdf-btn">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0.319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
     </div>
   </div>
 </div>
@@ -522,9 +639,9 @@ let savedContacts = {};
 let voiceFailCount = 0;
 let voicesLoaded = false;
 
-let conversationState = { 
-  amount: null, 
-  recipient: null, 
+let conversationState = {
+  amount: null,
+  recipient: null,
   account_number: null,
   bank: null,
   phone: null,
@@ -537,13 +654,13 @@ onAuthStateChanged(auth, async (user) => {
   if (!user) window.location.href = './login.html';
   else {
     currentUser = user;
-    
+
     try {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (userDoc.exists()) {
         currentUserData = userDoc.data();
       }
-      
+
       const contactsQuery = query(
         collection(db, 'contacts'),
         where('userId', '==', user.uid)
@@ -559,111 +676,57 @@ onAuthStateChanged(auth, async (user) => {
           name: data.name
         };
       });
-      console.log('Loaded contacts:', savedContacts);
-      
     } catch (e) {
       console.error('Error loading user data:', e);
     }
-    
+
+    // Load voices immediately on page load - NO WAITING LATER
+    loadVoicesFast();
+
     setTimeout(() => {
       if (!hasSpokenWelcome) {
         const name = currentUserData?.displayName || 'there';
-        speakHarps(`Hello ${name}. Tap the microphone and tell me what to do.`, 'en');
+        speakFemale(`Hello ${name}. Tap the microphone and tell me what to do.`);
         hasSpokenWelcome = true;
       }
     }, 500);
   }
 });
 
-// BULLETPROOF VOICE LOADING - CHROME FIX
-async function waitForVoices() {
-  return new Promise((resolve) => {
-    if (voicesLoaded && speechSynthesis.getVoices().length > 0) {
-      resolve();
-      return;
-    }
-    
-    const checkVoices = () => {
-      const voices = speechSynthesis.getVoices();
-      if (voices.length > 0) {
-        availableVoices = voices;
-        voicesLoaded = true;
-        console.log('Voices loaded:', voices.filter(v => v.lang.startsWith('en')).map(v => v.name));
-        resolve();
-      }
-    };
-    
-    speechSynthesis.onvoiceschanged = checkVoices;
-    checkVoices();
-    
-    if (speechSynthesis.getVoices().length === 0) {
-      speechSynthesis.speak(new SpeechSynthesisUtterance(''));
-    }
-    
-    setTimeout(resolve, 1000);
-  });
+// INSTANT VOICE LOADING - CACHE ON STARTUP
+function loadVoicesFast() {
+  speechSynthesis.getVoices();
+  setTimeout(() => {
+    availableVoices = speechSynthesis.getVoices();
+    voicesLoaded = true;
+  }, 100);
 }
 
-// FORCE WOMAN VOICE ONLY - NO MALE
-async function speakHarps(text, language = 'en') {
-  await waitForVoices();
+// INSTANT SPEAK - NO WAITING, FEMALE ONLY
+function speakFemale(text) {
   speechSynthesis.cancel();
-  
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-NG';
-      
-      const FEMALE_NAMES = [
-        'Google UK English Female',
-        'Samantha',
-        'Victoria',
-        'Karen',
-        'Tessa',
-        'Moira',
-        'Fiona'
-      ];
-      
-      let femaleVoice = null;
-      
-      for (let name of FEMALE_NAMES) {
-        femaleVoice = availableVoices.find(v => v.name === name);
-        if (femaleVoice) break;
-      }
-      
-      if (!femaleVoice) {
-        femaleVoice = availableVoices.find(v => 
-          v.name.toLowerCase().includes('female') && !v.name.toLowerCase().includes('male')
-        );
-      }
-      
-      if (!femaleVoice) {
-        femaleVoice = availableVoices.find(v => 
-          v.lang === 'en-NG' && 
-         !v.name.toLowerCase().includes('male') &&
-         !v.name.toLowerCase().includes('david')
-        );
-      }
-      
-      if (femaleVoice) {
-        utterance.voice = femaleVoice;
-        console.log('FORCED FEMALE VOICE:', femaleVoice.name);
-      }
-      
-      utterance.pitch = 1.25;
-      utterance.rate = 0.82;
-      utterance.volume = 1;
-      
-      utterance.onend = resolve;
-      utterance.onerror = resolve;
-      speechSynthesis.speak(utterance);
-    }, 100);
-  });
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-NG';
+
+  if (voicesLoaded && availableVoices.length > 0) {
+    const femaleVoice = availableVoices.find(v => v.name === 'Google UK English Female') ||
+                        availableVoices.find(v => v.name === 'Samantha') ||
+                        availableVoices.find(v =>!['Google US English', 'David', 'Male'].some(m => v.name.includes(m)));
+
+    if (femaleVoice) {
+      utterance.voice = femaleVoice;
+      utterance.pitch = 1.3;
+      utterance.rate = 0.9; // Faster
+    }
+  }
+
+  speechSynthesis.speak(utterance);
 }
 
 async function saveContactToFirebase(contactData) {
   if (!currentUser) return;
-  
+
   try {
     await addDoc(collection(db, 'contacts'), {
       userId: currentUser.uid,
@@ -674,9 +737,8 @@ async function saveContactToFirebase(contactData) {
       type: contactData.type || 'bank',
       createdAt: serverTimestamp()
     });
-    
+
     savedContacts[contactData.name.toLowerCase()] = contactData;
-    console.log('Contact saved:', contactData.name);
   } catch (e) {
     console.error('Error saving contact:', e);
   }
@@ -689,13 +751,11 @@ let finalTranscriptBuffer = '';
 if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
-  
-  // CRITICAL FIX: Use 'en-US' for better Pidgin/Yoruba recognition
-  // 'en-NG' makes Chrome try to map to Nigerian English phonetics = garbage
-  recognition.lang = 'en-US';
-  recognition.continuous = true; // FIX: Don't cut off mid-sentence
-  recognition.interimResults = true; // FIX: Show what it's hearing live
-  recognition.maxAlternatives = 5; // FIX: Get 5 guesses, pick best
+
+  recognition.lang = 'en-US'; // Better for Pidgin/Yoruba
+  recognition.continuous = false; // KEY: Stop after sentence = faster
+  recognition.interimResults = false; // KEY: Don't wait
+  recognition.maxAlternatives = 1; // KEY: Only 1 result = faster
 
   recognition.onstart = () => {
     isListening = true;
@@ -707,14 +767,13 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
     manualInputBox.classList.remove('show');
     transcriptLive.classList.add('show');
     confidenceBar.classList.remove('show');
-    speakHarps('I am listening.', 'en');
+    speakFemale('I am listening.');
   };
 
   recognition.onend = () => {
     isListening = false;
     mic.classList.remove('recording');
-    
-    // If we got something, process it
+
     if (finalTranscriptBuffer.trim()) {
       processTranscript(finalTranscriptBuffer.trim());
     } else {
@@ -724,41 +783,22 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   };
 
   recognition.onresult = (e) => {
-    let interim = '';
-    let final = '';
+    const transcript = e.results[0][0].transcript;
+    const confidence = e.results[0][0].confidence;
 
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const transcript = e.results[i][0].transcript;
-      const confidence = e.results[i][0].confidence;
-      
-      if (e.results[i].isFinal) {
-        final += transcript + ' ';
-        
-        // Show confidence
-        confidenceBar.classList.add('show');
-        confidenceFill.style.width = (confidence * 100) + '%';
-        
-        // If confidence too low, ask to repeat
-        if (confidence < 0.5) {
-          voiceFailCount++;
-          if (voiceFailCount >= 2) {
-            showManualInput();
-            return;
-          }
-        } else {
-          voiceFailCount = 0;
-        }
-      } else {
-        interim += transcript;
+    transcriptLive.innerText = transcript;
+    finalTranscriptBuffer = transcript;
+
+    confidenceBar.classList.add('show');
+    confidenceFill.style.width = (confidence * 100) + '%';
+
+    if (confidence < 0.5) {
+      voiceFailCount++;
+      if (voiceFailCount >= 2) {
+        showManualInput();
       }
-    }
-
-    // Show live transcript
-    transcriptLive.innerText = final || interim;
-    
-    // Accumulate final results
-    if (final) {
-      finalTranscriptBuffer += final + ' ';
+    } else {
+      voiceFailCount = 0;
     }
   };
 
@@ -766,17 +806,15 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
     isListening = false;
     mic.classList.remove('recording');
     transcriptLive.classList.remove('show');
-    
+
     if (e.error === 'no-speech') {
       status.innerText = 'No speech detected. Tap mic again.';
     } else if (e.error === 'not-allowed') {
       status.innerText = 'Mic permission denied. Enable in Settings.';
-    } else if (e.error !== 'aborted') {
-      status.innerText = 'Mic error: ' + e.error;
+    } else if (e.error!== 'aborted') {
+      status.innerText = 'Mic error. Try again.';
       voiceFailCount++;
-      if (voiceFailCount >= 2) {
-        showManualInput();
-      }
+      if (voiceFailCount >= 2) showManualInput();
     }
   };
 }
@@ -785,7 +823,7 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
 function showManualInput() {
   let fieldName = 'details';
   let placeholder = 'Type here...';
-  
+
   if (conversationState.step === 'amount') {
     fieldName = 'amount';
     placeholder = 'Enter amount (e.g. 5000)';
@@ -807,22 +845,21 @@ function showManualInput() {
     placeholder = 'Enter phone number';
     manualInputTitle.innerText = 'Enter Phone Number';
   }
-  
+
   conversationState.manualField = conversationState.step;
   manualInput.placeholder = placeholder;
   manualInput.value = '';
   manualInputBox.classList.add('show');
   status.innerText = `Voice failed. Type the ${fieldName} below.`;
-  speakHarps(`Sorry, I didn't catch that. Please type the ${fieldName}.`, 'en');
+  speakFemale(`Sorry, I didn't catch that. Please type the ${fieldName}.`);
 }
 
 window.submitManualInput = () => {
   const value = manualInput.value.trim();
   if (!value) return;
-  
+
   manualInputBox.classList.remove('show');
-  
-  // Process manual input same as voice
+
   if (conversationState.manualField === 'amount') {
     conversationState.amount = parseInt(value.replace(/\D/g,''));
   } else if (conversationState.manualField === 'recipient') {
@@ -834,22 +871,21 @@ window.submitManualInput = () => {
   } else if (conversationState.manualField === 'phone') {
     conversationState.phone = value.replace(/\D/g,'');
   }
-  
+
   processConversationStep();
 };
 
 async function processConversationStep() {
-  // Check if we have enough info
   if (conversationState.amount && conversationState.recipient) {
     const contactKey = conversationState.recipient.toLowerCase();
-    
+
     if (savedContacts[contactKey]) {
       const contact = savedContacts[contactKey];
       conversationState.account_number = contact.account_number;
       conversationState.bank = contact.bank;
       conversationState.phone = contact.phone;
       conversationState.step = 'confirm';
-      
+
       let confirmText;
       if (conversationState.intent === 'airtime') {
         confirmText = `Buy ₦${conversationState.amount.toLocaleString()} airtime for ${conversationState.recipient}?`;
@@ -857,34 +893,33 @@ async function processConversationStep() {
         confirmText = `Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient}?`;
       }
       status.innerText = confirmText;
-      await speakHarps(confirmText, 'en');
+      speakFemale(confirmText);
       confirmBox.classList.add('show');
     } else {
-      // First time - ask for details
       if (conversationState.intent === 'airtime') {
         conversationState.step = 'phone';
         const ask = `First time sending to ${conversationState.recipient}. Please say their phone number.`;
         status.innerText = ask;
-        await speakHarps(ask, 'en');
+        speakFemale(ask);
       } else {
         conversationState.step = 'account_number';
         const ask = `First time sending to ${conversationState.recipient}. Please say the account number.`;
         status.innerText = ask;
-        await speakHarps(ask, 'en');
+        speakFemale(ask);
       }
     }
   } else if (!conversationState.amount && conversationState.recipient) {
     conversationState.step = 'amount';
     const ask = `How much should I send to ${conversationState.recipient}?`;
     status.innerText = ask;
-    await speakHarps(ask, 'en');
+    speakFemale(ask);
   } else if (!conversationState.recipient && conversationState.amount) {
     conversationState.step = 'recipient';
-    const ask = conversationState.intent === 'airtime' 
-      ? `Buy ₦${conversationState.amount.toLocaleString()} airtime for who?`
+    const ask = conversationState.intent === 'airtime'
+     ? `Buy ₦${conversationState.amount.toLocaleString()} airtime for who?`
       : `Send ₦${conversationState.amount.toLocaleString()} to who?`;
     status.innerText = ask;
-    await speakHarps(ask, 'en');
+    speakFemale(ask);
   }
 }
 
@@ -895,10 +930,8 @@ async function processTranscript(final) {
 
   try {
     let transcriptToSend = final;
-    
-    // SMART CONVERSATION FLOW - Handle multi-step collection
+
     if (conversationState.step === 'amount') {
-      // User said amount, inject into context
       const numMatch = final.match(/\d+/);
       if (numMatch) {
         conversationState.amount = parseInt(numMatch[0]);
@@ -922,7 +955,7 @@ async function processTranscript(final) {
       });
       const confirmText = `Saved. Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient}?`;
       status.innerText = confirmText;
-      await speakHarps(confirmText, 'en');
+      speakFemale(confirmText);
       confirmBox.classList.add('show');
       conversationState.step = 'confirm';
       return;
@@ -936,7 +969,7 @@ async function processTranscript(final) {
       });
       const confirmText = `Saved. Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient} at ${conversationState.bank}?`;
       status.innerText = confirmText;
-      await speakHarps(confirmText, 'en');
+      speakFemale(confirmText);
       confirmBox.classList.add('show');
       conversationState.step = 'confirm';
       return;
@@ -949,30 +982,34 @@ async function processTranscript(final) {
       });
       const confirmText = `Saved. Buy ₦${conversationState.amount.toLocaleString()} airtime for ${conversationState.recipient}?`;
       status.innerText = confirmText;
-      await speakHarps(confirmText, 'en');
+      speakFemale(confirmText);
       confirmBox.classList.add('show');
       conversationState.step = 'confirm';
       return;
     }
 
-    // SEND TO BACKEND FOR PARSING
+    // FAST BACKEND CALL WITH TIMEOUT
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s max
+
     const res = await fetch(BACKEND_URL + '/parse', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({transcript: transcriptToSend})
+      body:JSON.stringify({transcript: transcriptToSend}),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!res.ok) throw new Error('Server error ' + res.status);
     const data = await res.json();
-    console.log('Backend returned:', data);
 
-    // UPDATE CONVERSATION STATE
     if (data.amount) conversationState.amount = data.amount;
     if (data.recipient) conversationState.recipient = data.recipient;
     if (data.intent) conversationState.intent = data.intent;
 
     currentIntent = {
-   ...data,
+    ...data,
       amount: conversationState.amount,
       recipient: conversationState.recipient,
       account_number: savedContacts[conversationState.recipient?.toLowerCase()]?.account_number || null,
@@ -984,35 +1021,34 @@ async function processTranscript(final) {
     confidenceBar.classList.add('show');
     confidenceFill.style.width = (data.confidence * 100) + '%';
 
-    // ROUTE BASED ON WHAT WE HAVE
     if (conversationState.amount && conversationState.recipient) {
       await processConversationStep();
     } else if (!conversationState.amount && conversationState.recipient) {
       conversationState.step = 'amount';
       const ask = `How much should I send to ${conversationState.recipient}?`;
       status.innerText = ask;
-      await speakHarps(ask, data.language_detected);
+      speakFemale(ask);
     } else if (!conversationState.recipient && conversationState.amount) {
       conversationState.step = 'recipient';
-      const ask = conversationState.intent === 'airtime' 
-        ? `Buy ₦${conversationState.amount.toLocaleString()} airtime for who?`
+      const ask = conversationState.intent === 'airtime'
+       ? `Buy ₦${conversationState.amount.toLocaleString()} airtime for who?`
         : `Send ₦${conversationState.amount.toLocaleString()} to who?`;
       status.innerText = ask;
-      await speakHarps(ask, data.language_detected);
+      speakFemale(ask);
     } else {
       status.innerText = data.response;
-      await speakHarps(data.response, data.language_detected);
+      speakFemale(data.response);
     }
 
   } catch(err) {
     console.error('Fetch error:', err);
     voiceFailCount++;
-    
+
     if (voiceFailCount >= 2) {
       showManualInput();
     } else {
       status.innerText = 'Did not catch that. Tap mic and speak again.';
-      await speakHarps('Sorry, I did not understand. Please speak again clearly.', 'en');
+      speakFemale('Sorry, I did not understand. Please speak again clearly.');
     }
   }
 }
@@ -1045,7 +1081,7 @@ window.createOpayLink = async () => {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        amount: conversationState.amount,
+        amount: conversationState.amount * 100, // Convert to kobo
         recipient: conversationState.recipient,
         account_number: conversationState.account_number,
         bank: conversationState.bank,
@@ -1059,14 +1095,18 @@ window.createOpayLink = async () => {
     const data = await res.json();
 
     if (data.success || data.data) {
-      const opayUrl = data.paymentUrl || data.data?.cashierUrl;
-      await speakHarps(`Opening Opay. Amount ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient} is locked. Just enter your PIN.`, 'en');
+      let opayUrl = data.paymentUrl || data.data?.cashierUrl;
+
+      // CRITICAL FIX: Remove /HarpsPay/ from URL to prevent 404
+      opayUrl = opayUrl.replace('/HarpsPay/', '/');
+
+      speakFemale(`Opening Opay. Amount ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient} is locked. Just enter your PIN.`);
       status.innerText = 'Redirecting to Opay...';
 
       // Save transaction to Firebase
       await addDoc(collection(db, 'transactions'), {
         userId: currentUser.uid,
-        amount: conversationState.amount,
+        amount: conversationState.amount * 100,
         recipient: conversationState.recipient,
         account_number: conversationState.account_number,
         bank: conversationState.bank,
@@ -1087,7 +1127,7 @@ window.createOpayLink = async () => {
     console.error('Opay link error:', err);
     loadingOpay.classList.remove('show');
     status.innerText = 'Failed to create Opay link. Try again.';
-    await speakHarps('Sorry, could not create payment link', 'en');
+    speakFemale('Sorry, could not create payment link');
   }
 };
 
@@ -1099,9 +1139,9 @@ window.resetMic = () => {
   status.classList.remove('active');
   currentIntent = null;
   voiceFailCount = 0;
-  conversationState = { 
-    amount: null, 
-    recipient: null, 
+  conversationState = {
+    amount: null,
+    recipient: null,
     account_number: null,
     bank: null,
     phone: null,
@@ -1119,6 +1159,14 @@ window.logout = async () => {
   await signOut(auth);
   localStorage.clear();
   window.location.href = './login.html';
+};
+
+// ABOUT MODAL
+window.showAbout = () => {
+  document.getElementById('aboutModal').classList.add('show');
+};
+window.closeAbout = () => {
+  document.getElementById('aboutModal').classList.remove('show');
 };
 </script>
 
