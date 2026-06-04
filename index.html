@@ -367,6 +367,51 @@ h1{
   font-weight:500;
 }
 .footer.security svg{width:15px;height:15px}
+
+/* MANUAL INPUT BOX - SHOWS WHEN VOICE FAILS */
+.manual-input-box{
+  margin-top:20px;
+  padding:20px;
+  border-radius:16px;
+  background:var(--card);
+  border:1px solid var(--border);
+  display:none;
+  animation:slide-up 0.4s ease;
+}
+.manual-input-box.show{
+  display:block;
+}
+.manual-input-box h4{
+  color:var(--green);
+  font-size:14px;
+  margin-bottom:12px;
+}
+.manual-input-box input{
+  width:100%;
+  padding:14px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,0.05);
+  color:white;
+  font-size:16px;
+  margin-bottom:12px;
+  font-family:'Space Grotesk', sans-serif;
+}
+.manual-input-box input:focus{
+  outline:none;
+  border-color:var(--green);
+}
+.manual-submit{
+  width:100%;
+  padding:14px;
+  border-radius:12px;
+  border:none;
+  background:var(--green);
+  color:#000;
+  font-weight:700;
+  font-size:15px;
+  cursor:pointer;
+}
 </style>
 </head>
 <body>
@@ -411,6 +456,13 @@ h1{
 
   <p class="hint">"Send 5k to Seyi" • "Buy 2k airtime for Mama" • "Pay NEPA bill" • "Transfer to GTBank"</p>
   <div class="status-card" id="status">Tap the mic to start speaking</div>
+
+  <!-- MANUAL INPUT FALLBACK -->
+  <div class="manual-input-box" id="manualInputBox">
+    <h4 id="manualInputTitle">Enter Details Manually</h4>
+    <input type="text" id="manualInput" placeholder="Type here...">
+    <button class="manual-submit" onclick="submitManualInput()">Submit</button>
+  </div>
 
   <div class="confirm-box" id="confirmBox">
     <button class="btn btn-confirm" onclick="createOpayLink()">Confirm & Pay</button>
@@ -457,13 +509,18 @@ const transcriptLive = document.getElementById('transcriptLive');
 const confidenceBar = document.getElementById('confidenceBar');
 const confidenceFill = document.getElementById('confidenceFill');
 const loadingOpay = document.getElementById('loadingOpay');
+const manualInputBox = document.getElementById('manualInputBox');
+const manualInput = document.getElementById('manualInput');
+const manualInputTitle = document.getElementById('manualInputTitle');
 
 let currentIntent = null;
 let currentUser = null;
 let currentUserData = null;
 let availableVoices = [];
 let hasSpokenWelcome = false;
-let savedContacts = {}; // Loaded from Firebase
+let savedContacts = {};
+let voiceFailCount = 0;
+let voicesLoaded = false;
 
 let conversationState = { 
   amount: null, 
@@ -471,8 +528,9 @@ let conversationState = {
   account_number: null,
   bank: null,
   phone: null,
-  intent: 'transfer', // transfer, airtime, bill
-  step: 'start' 
+  intent: 'transfer',
+  step: 'start',
+  manualField: null
 };
 
 onAuthStateChanged(auth, async (user) => {
@@ -486,7 +544,6 @@ onAuthStateChanged(auth, async (user) => {
         currentUserData = userDoc.data();
       }
       
-      // LOAD CONTACTS FROM FIREBASE
       const contactsQuery = query(
         collection(db, 'contacts'),
         where('userId', '==', user.uid)
@@ -494,7 +551,7 @@ onAuthStateChanged(auth, async (user) => {
       const contactsSnapshot = await getDocs(contactsQuery);
       contactsSnapshot.forEach((doc) => {
         const data = doc.data();
-        savedContacts[data.name] = {
+        savedContacts[data.name.toLowerCase()] = {
           account_number: data.account_number,
           bank: data.bank || null,
           phone: data.phone || null,
@@ -502,7 +559,7 @@ onAuthStateChanged(auth, async (user) => {
           name: data.name
         };
       });
-      console.log('Loaded contacts from Firebase:', savedContacts);
+      console.log('Loaded contacts:', savedContacts);
       
     } catch (e) {
       console.error('Error loading user data:', e);
@@ -518,59 +575,92 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// AGGRESSIVE FEMALE VOICE - CHROME + SAFARI FIX
-function loadVoices() {
-  availableVoices = speechSynthesis.getVoices();
-  console.log('Available voices:', availableVoices.map(v => v.name + ' (' + v.lang + ')'));
-}
-speechSynthesis.onvoiceschanged = loadVoices;
-loadVoices();
-
-// FORCE WOMAN VOICE ONLY
-function speakHarps(text, language = 'en') {
+// BULLETPROOF VOICE LOADING - CHROME FIX
+async function waitForVoices() {
   return new Promise((resolve) => {
-    speechSynthesis.cancel();
+    if (voicesLoaded && speechSynthesis.getVoices().length > 0) {
+      resolve();
+      return;
+    }
+    
+    const checkVoices = () => {
+      const voices = speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        availableVoices = voices;
+        voicesLoaded = true;
+        console.log('Voices loaded:', voices.filter(v => v.lang.startsWith('en')).map(v => v.name));
+        resolve();
+      }
+    };
+    
+    speechSynthesis.onvoiceschanged = checkVoices;
+    checkVoices();
+    
+    if (speechSynthesis.getVoices().length === 0) {
+      speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+    }
+    
+    setTimeout(resolve, 1000);
+  });
+}
+
+// FORCE WOMAN VOICE ONLY - NO MALE
+async function speakHarps(text, language = 'en') {
+  await waitForVoices();
+  speechSynthesis.cancel();
+  
+  return new Promise((resolve) => {
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-NG';
       
-      // PRIORITY 1: Google UK English Female - Chrome best female
-      let femaleVoice = availableVoices.find(v => v.name === 'Google UK English Female');
+      const FEMALE_NAMES = [
+        'Google UK English Female',
+        'Samantha',
+        'Victoria',
+        'Karen',
+        'Tessa',
+        'Moira',
+        'Fiona'
+      ];
       
-      // PRIORITY 2: Samantha - Safari best female
-      if (!femaleVoice) femaleVoice = availableVoices.find(v => v.name === 'Samantha');
+      let femaleVoice = null;
       
-      // PRIORITY 3: Nigerian English
-      if (!femaleVoice) femaleVoice = availableVoices.find(v => v.lang === 'en-NG');
+      for (let name of FEMALE_NAMES) {
+        femaleVoice = availableVoices.find(v => v.name === name);
+        if (femaleVoice) break;
+      }
       
-      // PRIORITY 4: Any voice with "female" in name
-      if (!femaleVoice) femaleVoice = availableVoices.find(v => 
-        v.name.toLowerCase().includes('female')
-      );
+      if (!femaleVoice) {
+        femaleVoice = availableVoices.find(v => 
+          v.name.toLowerCase().includes('female') && !v.name.toLowerCase().includes('male')
+        );
+      }
       
-      // PRIORITY 5: Any English voice NOT male
-      if (!femaleVoice) femaleVoice = availableVoices.find(v => 
-        v.lang.startsWith('en') &&!v.name.toLowerCase().includes('male')
-      );
+      if (!femaleVoice) {
+        femaleVoice = availableVoices.find(v => 
+          v.lang === 'en-NG' && 
+         !v.name.toLowerCase().includes('male') &&
+         !v.name.toLowerCase().includes('david')
+        );
+      }
       
       if (femaleVoice) {
         utterance.voice = femaleVoice;
-        console.log('Using FEMALE voice:', femaleVoice.name);
+        console.log('FORCED FEMALE VOICE:', femaleVoice.name);
       }
       
-      // FORCE WOMAN SETTINGS
-      utterance.pitch = 1.2; // Higher = more feminine
-      utterance.rate = 0.85;
+      utterance.pitch = 1.25;
+      utterance.rate = 0.82;
       utterance.volume = 1;
       
       utterance.onend = resolve;
       utterance.onerror = resolve;
       speechSynthesis.speak(utterance);
-    }, 150);
+    }, 100);
   });
 }
 
-// SAVE CONTACT TO FIREBASE
 async function saveContactToFirebase(contactData) {
   if (!currentUser) return;
   
@@ -585,8 +675,8 @@ async function saveContactToFirebase(contactData) {
       createdAt: serverTimestamp()
     });
     
-    savedContacts[contactData.name] = contactData;
-    console.log('Contact saved to Firebase:', contactData.name);
+    savedContacts[contactData.name.toLowerCase()] = contactData;
+    console.log('Contact saved:', contactData.name);
   } catch (e) {
     console.error('Error saving contact:', e);
   }
@@ -594,21 +684,27 @@ async function saveContactToFirebase(contactData) {
 
 let recognition;
 let isListening = false;
+let finalTranscriptBuffer = '';
 
 if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
-  recognition.lang = 'en-NG';
-  recognition.continuous = true;
-  recognition.interimResults = true;
-  recognition.maxAlternatives = 3;
+  
+  // CRITICAL FIX: Use 'en-US' for better Pidgin/Yoruba recognition
+  // 'en-NG' makes Chrome try to map to Nigerian English phonetics = garbage
+  recognition.lang = 'en-US';
+  recognition.continuous = true; // FIX: Don't cut off mid-sentence
+  recognition.interimResults = true; // FIX: Show what it's hearing live
+  recognition.maxAlternatives = 5; // FIX: Get 5 guesses, pick best
 
   recognition.onstart = () => {
     isListening = true;
+    finalTranscriptBuffer = '';
     mic.classList.add('recording');
     status.innerText = 'Listening... Speak clearly';
     status.classList.add('active');
     confirmBox.classList.remove('show');
+    manualInputBox.classList.remove('show');
     transcriptLive.classList.add('show');
     confidenceBar.classList.remove('show');
     speakHarps('I am listening.', 'en');
@@ -617,160 +713,52 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   recognition.onend = () => {
     isListening = false;
     mic.classList.remove('recording');
-    transcriptLive.classList.remove('show');
+    
+    // If we got something, process it
+    if (finalTranscriptBuffer.trim()) {
+      processTranscript(finalTranscriptBuffer.trim());
+    } else {
+      transcriptLive.classList.remove('show');
+      status.innerText = 'Tap the mic to start speaking';
+    }
   };
 
-  recognition.onresult = async (e) => {
+  recognition.onresult = (e) => {
     let interim = '';
     let final = '';
 
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const transcript = e.results[i][0].transcript;
-      if (e.results[i].isFinal) final += transcript;
-      else interim += transcript;
+      const confidence = e.results[i][0].confidence;
+      
+      if (e.results[i].isFinal) {
+        final += transcript + ' ';
+        
+        // Show confidence
+        confidenceBar.classList.add('show');
+        confidenceFill.style.width = (confidence * 100) + '%';
+        
+        // If confidence too low, ask to repeat
+        if (confidence < 0.5) {
+          voiceFailCount++;
+          if (voiceFailCount >= 2) {
+            showManualInput();
+            return;
+          }
+        } else {
+          voiceFailCount = 0;
+        }
+      } else {
+        interim += transcript;
+      }
     }
 
+    // Show live transcript
     transcriptLive.innerText = final || interim;
-
+    
+    // Accumulate final results
     if (final) {
-      status.innerText = `Processing: "${final}"`;
-      status.classList.add('active');
-
-      try{
-        let transcriptToSend = final;
-        
-        // SMART CONVERSATION FLOW
-        if (conversationState.step === 'amount') {
-          transcriptToSend = `Send ${final} to ${conversationState.recipient}`;
-        } else if (conversationState.step === 'recipient') {
-          transcriptToSend = `Send ${conversationState.amount} to ${final}`;
-        } else if (conversationState.step === 'account_number') {
-          conversationState.account_number = final.replace(/\D/g,'');
-          await saveContactToFirebase({
-            name: conversationState.recipient,
-            account_number: conversationState.account_number,
-            type: 'bank'
-          });
-          const confirmText = `Saved. Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient}?`;
-          status.innerText = confirmText;
-          await speakHarps(confirmText, 'en');
-          confirmBox.classList.add('show');
-          conversationState.step = 'confirm';
-          return;
-        } else if (conversationState.step === 'bank') {
-          conversationState.bank = final;
-          await saveContactToFirebase({
-            name: conversationState.recipient,
-            account_number: conversationState.account_number,
-            bank: conversationState.bank,
-            type: 'bank'
-          });
-          const confirmText = `Saved. Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient} at ${conversationState.bank}?`;
-          status.innerText = confirmText;
-          await speakHarps(confirmText, 'en');
-          confirmBox.classList.add('show');
-          conversationState.step = 'confirm';
-          return;
-        } else if (conversationState.step === 'phone') {
-          conversationState.phone = final.replace(/\D/g,'');
-          await saveContactToFirebase({
-            name: conversationState.recipient,
-            phone: conversationState.phone,
-            type: 'airtime'
-          });
-          const confirmText = `Saved. Buy ₦${conversationState.amount.toLocaleString()} airtime for ${conversationState.recipient}?`;
-          status.innerText = confirmText;
-          await speakHarps(confirmText, 'en');
-          confirmBox.classList.add('show');
-          conversationState.step = 'confirm';
-          return;
-        }
-
-        const res = await fetch(BACKEND_URL + '/parse', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({transcript: transcriptToSend})
-        });
-
-        if (!res.ok) throw new Error('Server error ' + res.status);
-        const data = await res.json();
-        console.log('Backend returned:', data);
-
-        if (data.amount) conversationState.amount = data.amount;
-        if (data.recipient) conversationState.recipient = data.recipient;
-        if (data.intent) conversationState.intent = data.intent;
-
-        currentIntent = {
-       ...data,
-          amount: conversationState.amount,
-          recipient: conversationState.recipient,
-          account_number: savedContacts[conversationState.recipient]?.account_number || null,
-          bank: savedContacts[conversationState.recipient]?.bank || null,
-          phone: savedContacts[conversationState.recipient]?.phone || null,
-          intent: conversationState.intent
-        };
-
-        confidenceBar.classList.add('show');
-        confidenceFill.style.width = (data.confidence * 100) + '%';
-
-        // SMART COLLECTION BASED ON INTENT
-        if (!conversationState.amount && conversationState.recipient) {
-          conversationState.step = 'amount';
-          const ask = `How much should I send to ${conversationState.recipient}?`;
-          status.innerText = ask;
-          await speakHarps(ask, data.language_detected);
-        } 
-        else if (!conversationState.recipient && conversationState.amount) {
-          conversationState.step = 'recipient';
-          const ask = conversationState.intent === 'airtime' 
-            ? `Buy ₦${conversationState.amount.toLocaleString()} airtime for who?`
-            : `Send ₦${conversationState.amount.toLocaleString()} to who?`;
-          status.innerText = ask;
-          await speakHarps(ask, data.language_detected);
-        }
-        else if (conversationState.amount && conversationState.recipient) {
-          // CHECK IF WE KNOW THIS PERSON
-          if (savedContacts[conversationState.recipient]) {
-            const contact = savedContacts[conversationState.recipient];
-            conversationState.account_number = contact.account_number;
-            conversationState.bank = contact.bank;
-            conversationState.phone = contact.phone;
-            conversationState.step = 'confirm';
-            
-            let confirmText;
-            if (conversationState.intent === 'airtime') {
-              confirmText = `Buy ₦${conversationState.amount.toLocaleString()} airtime for ${conversationState.recipient}?`;
-            } else {
-              confirmText = `Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient}?`;
-            }
-            status.innerText = confirmText;
-            await speakHarps(confirmText, data.language_detected);
-            confirmBox.classList.add('show');
-          } else {
-            // FIRST TIME - ASK FOR DETAILS BASED ON INTENT
-            if (conversationState.intent === 'airtime') {
-              conversationState.step = 'phone';
-              const ask = `First time sending to ${conversationState.recipient}. Please say their phone number.`;
-              status.innerText = ask;
-              await speakHarps(ask, data.language_detected);
-            } else {
-              conversationState.step = 'account_number';
-              const ask = `First time sending to ${conversationState.recipient}. Please say the account number.`;
-              status.innerText = ask;
-              await speakHarps(ask, data.language_detected);
-            }
-          }
-        } 
-        else {
-          status.innerText = data.response;
-          await speakHarps(data.response, data.language_detected);
-        }
-
-      }catch(err){
-        console.error('Fetch error:', err);
-        status.innerText = 'Error: Cannot reach server. Check connection.';
-        await speakHarps('Sorry, network error. Try again.', 'en');
-      }
+      finalTranscriptBuffer += final + ' ';
     }
   };
 
@@ -778,14 +766,255 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
     isListening = false;
     mic.classList.remove('recording');
     transcriptLive.classList.remove('show');
+    
     if (e.error === 'no-speech') {
       status.innerText = 'No speech detected. Tap mic again.';
     } else if (e.error === 'not-allowed') {
       status.innerText = 'Mic permission denied. Enable in Settings.';
-    } else if (e.error!== 'aborted') {
+    } else if (e.error !== 'aborted') {
       status.innerText = 'Mic error: ' + e.error;
+      voiceFailCount++;
+      if (voiceFailCount >= 2) {
+        showManualInput();
+      }
     }
   };
+}
+
+// MANUAL INPUT FALLBACK
+function showManualInput() {
+  let fieldName = 'details';
+  let placeholder = 'Type here...';
+  
+  if (conversationState.step === 'amount') {
+    fieldName = 'amount';
+    placeholder = 'Enter amount (e.g. 5000)';
+    manualInputTitle.innerText = 'Enter Amount';
+  } else if (conversationState.step === 'recipient') {
+    fieldName = 'recipient name';
+    placeholder = 'Enter name (e.g. Seyi)';
+    manualInputTitle.innerText = 'Enter Recipient Name';
+  } else if (conversationState.step === 'account_number') {
+    fieldName = 'account number';
+    placeholder = 'Enter 10-digit account number';
+    manualInputTitle.innerText = 'Enter Account Number';
+  } else if (conversationState.step === 'bank') {
+    fieldName = 'bank name';
+    placeholder = 'Enter bank (e.g. GTBank)';
+    manualInputTitle.innerText = 'Enter Bank Name';
+  } else if (conversationState.step === 'phone') {
+    fieldName = 'phone number';
+    placeholder = 'Enter phone number';
+    manualInputTitle.innerText = 'Enter Phone Number';
+  }
+  
+  conversationState.manualField = conversationState.step;
+  manualInput.placeholder = placeholder;
+  manualInput.value = '';
+  manualInputBox.classList.add('show');
+  status.innerText = `Voice failed. Type the ${fieldName} below.`;
+  speakHarps(`Sorry, I didn't catch that. Please type the ${fieldName}.`, 'en');
+}
+
+window.submitManualInput = () => {
+  const value = manualInput.value.trim();
+  if (!value) return;
+  
+  manualInputBox.classList.remove('show');
+  
+  // Process manual input same as voice
+  if (conversationState.manualField === 'amount') {
+    conversationState.amount = parseInt(value.replace(/\D/g,''));
+  } else if (conversationState.manualField === 'recipient') {
+    conversationState.recipient = value;
+  } else if (conversationState.manualField === 'account_number') {
+    conversationState.account_number = value.replace(/\D/g,'');
+  } else if (conversationState.manualField === 'bank') {
+    conversationState.bank = value;
+  } else if (conversationState.manualField === 'phone') {
+    conversationState.phone = value.replace(/\D/g,'');
+  }
+  
+  processConversationStep();
+};
+
+async function processConversationStep() {
+  // Check if we have enough info
+  if (conversationState.amount && conversationState.recipient) {
+    const contactKey = conversationState.recipient.toLowerCase();
+    
+    if (savedContacts[contactKey]) {
+      const contact = savedContacts[contactKey];
+      conversationState.account_number = contact.account_number;
+      conversationState.bank = contact.bank;
+      conversationState.phone = contact.phone;
+      conversationState.step = 'confirm';
+      
+      let confirmText;
+      if (conversationState.intent === 'airtime') {
+        confirmText = `Buy ₦${conversationState.amount.toLocaleString()} airtime for ${conversationState.recipient}?`;
+      } else {
+        confirmText = `Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient}?`;
+      }
+      status.innerText = confirmText;
+      await speakHarps(confirmText, 'en');
+      confirmBox.classList.add('show');
+    } else {
+      // First time - ask for details
+      if (conversationState.intent === 'airtime') {
+        conversationState.step = 'phone';
+        const ask = `First time sending to ${conversationState.recipient}. Please say their phone number.`;
+        status.innerText = ask;
+        await speakHarps(ask, 'en');
+      } else {
+        conversationState.step = 'account_number';
+        const ask = `First time sending to ${conversationState.recipient}. Please say the account number.`;
+        status.innerText = ask;
+        await speakHarps(ask, 'en');
+      }
+    }
+  } else if (!conversationState.amount && conversationState.recipient) {
+    conversationState.step = 'amount';
+    const ask = `How much should I send to ${conversationState.recipient}?`;
+    status.innerText = ask;
+    await speakHarps(ask, 'en');
+  } else if (!conversationState.recipient && conversationState.amount) {
+    conversationState.step = 'recipient';
+    const ask = conversationState.intent === 'airtime' 
+      ? `Buy ₦${conversationState.amount.toLocaleString()} airtime for who?`
+      : `Send ₦${conversationState.amount.toLocaleString()} to who?`;
+    status.innerText = ask;
+    await speakHarps(ask, 'en');
+  }
+}
+
+async function processTranscript(final) {
+  status.innerText = `Processing: "${final}"`;
+  status.classList.add('active');
+  transcriptLive.classList.remove('show');
+
+  try {
+    let transcriptToSend = final;
+    
+    // SMART CONVERSATION FLOW - Handle multi-step collection
+    if (conversationState.step === 'amount') {
+      // User said amount, inject into context
+      const numMatch = final.match(/\d+/);
+      if (numMatch) {
+        conversationState.amount = parseInt(numMatch[0]);
+        if (conversationState.recipient) {
+          transcriptToSend = `Send ${conversationState.amount} to ${conversationState.recipient}`;
+        } else {
+          transcriptToSend = `Send ${conversationState.amount}`;
+        }
+      }
+    } else if (conversationState.step === 'recipient') {
+      conversationState.recipient = final.replace(/to|for/gi, '').trim();
+      if (conversationState.amount) {
+        transcriptToSend = `Send ${conversationState.amount} to ${conversationState.recipient}`;
+      }
+    } else if (conversationState.step === 'account_number') {
+      conversationState.account_number = final.replace(/\D/g,'');
+      await saveContactToFirebase({
+        name: conversationState.recipient,
+        account_number: conversationState.account_number,
+        type: 'bank'
+      });
+      const confirmText = `Saved. Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient}?`;
+      status.innerText = confirmText;
+      await speakHarps(confirmText, 'en');
+      confirmBox.classList.add('show');
+      conversationState.step = 'confirm';
+      return;
+    } else if (conversationState.step === 'bank') {
+      conversationState.bank = final;
+      await saveContactToFirebase({
+        name: conversationState.recipient,
+        account_number: conversationState.account_number,
+        bank: conversationState.bank,
+        type: 'bank'
+      });
+      const confirmText = `Saved. Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient} at ${conversationState.bank}?`;
+      status.innerText = confirmText;
+      await speakHarps(confirmText, 'en');
+      confirmBox.classList.add('show');
+      conversationState.step = 'confirm';
+      return;
+    } else if (conversationState.step === 'phone') {
+      conversationState.phone = final.replace(/\D/g,'');
+      await saveContactToFirebase({
+        name: conversationState.recipient,
+        phone: conversationState.phone,
+        type: 'airtime'
+      });
+      const confirmText = `Saved. Buy ₦${conversationState.amount.toLocaleString()} airtime for ${conversationState.recipient}?`;
+      status.innerText = confirmText;
+      await speakHarps(confirmText, 'en');
+      confirmBox.classList.add('show');
+      conversationState.step = 'confirm';
+      return;
+    }
+
+    // SEND TO BACKEND FOR PARSING
+    const res = await fetch(BACKEND_URL + '/parse', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({transcript: transcriptToSend})
+    });
+
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const data = await res.json();
+    console.log('Backend returned:', data);
+
+    // UPDATE CONVERSATION STATE
+    if (data.amount) conversationState.amount = data.amount;
+    if (data.recipient) conversationState.recipient = data.recipient;
+    if (data.intent) conversationState.intent = data.intent;
+
+    currentIntent = {
+   ...data,
+      amount: conversationState.amount,
+      recipient: conversationState.recipient,
+      account_number: savedContacts[conversationState.recipient?.toLowerCase()]?.account_number || null,
+      bank: savedContacts[conversationState.recipient?.toLowerCase()]?.bank || null,
+      phone: savedContacts[conversationState.recipient?.toLowerCase()]?.phone || null,
+      intent: conversationState.intent
+    };
+
+    confidenceBar.classList.add('show');
+    confidenceFill.style.width = (data.confidence * 100) + '%';
+
+    // ROUTE BASED ON WHAT WE HAVE
+    if (conversationState.amount && conversationState.recipient) {
+      await processConversationStep();
+    } else if (!conversationState.amount && conversationState.recipient) {
+      conversationState.step = 'amount';
+      const ask = `How much should I send to ${conversationState.recipient}?`;
+      status.innerText = ask;
+      await speakHarps(ask, data.language_detected);
+    } else if (!conversationState.recipient && conversationState.amount) {
+      conversationState.step = 'recipient';
+      const ask = conversationState.intent === 'airtime' 
+        ? `Buy ₦${conversationState.amount.toLocaleString()} airtime for who?`
+        : `Send ₦${conversationState.amount.toLocaleString()} to who?`;
+      status.innerText = ask;
+      await speakHarps(ask, data.language_detected);
+    } else {
+      status.innerText = data.response;
+      await speakHarps(data.response, data.language_detected);
+    }
+
+  } catch(err) {
+    console.error('Fetch error:', err);
+    voiceFailCount++;
+    
+    if (voiceFailCount >= 2) {
+      showManualInput();
+    } else {
+      status.innerText = 'Did not catch that. Tap mic and speak again.';
+      await speakHarps('Sorry, I did not understand. Please speak again clearly.', 'en');
+    }
+  }
 }
 
 mic.onclick = () => {
@@ -831,7 +1060,7 @@ window.createOpayLink = async () => {
 
     if (data.success || data.data) {
       const opayUrl = data.paymentUrl || data.data?.cashierUrl;
-      await speakHarps(`Opening Opay. Amount ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient} is locked. Just enter your PIN.`, currentIntent.language_detected);
+      await speakHarps(`Opening Opay. Amount ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient} is locked. Just enter your PIN.`, 'en');
       status.innerText = 'Redirecting to Opay...';
 
       // Save transaction to Firebase
@@ -865,9 +1094,11 @@ window.createOpayLink = async () => {
 window.resetMic = () => {
   confirmBox.classList.remove('show');
   loadingOpay.classList.remove('show');
+  manualInputBox.classList.remove('show');
   status.innerText = 'Tap the mic to start';
   status.classList.remove('active');
   currentIntent = null;
+  voiceFailCount = 0;
   conversationState = { 
     amount: null, 
     recipient: null, 
@@ -875,7 +1106,8 @@ window.resetMic = () => {
     bank: null,
     phone: null,
     intent: 'transfer',
-    step: 'start' 
+    step: 'start',
+    manualField: null
   };
 };
 
