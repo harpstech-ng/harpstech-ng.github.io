@@ -473,6 +473,8 @@ h1{
   line-height:1;
 }
 .modal-body{padding:24px}
+.modal-body p{color:#fff!important;margin-bottom:12px;line-height:1.6}
+.modal-body strong{color:var(--green)!important}
 .team-links{
   display:flex;
   flex-direction:column;
@@ -484,11 +486,11 @@ h1{
   align-items:center;
   gap:10px;
   padding:14px;
-  background:linear-gradient(135deg, #F9FAFB, #F3F4F6);
+  background:rgba(255,255,255,0.05);
   border:1px solid var(--border);
   border-radius:12px;
   text-decoration:none;
-  color:var(--text);
+  color:white;
   font-weight:600;
   transition:all 0.2s ease;
 }
@@ -497,6 +499,20 @@ h1{
   background:rgba(0,208,132,0.05);
 }
 .pdf-btn svg{width:20px;height:20px;color:var(--green)}
+
+/* NEW: USSD Button */
+.ussd-btn{
+  margin-top:12px;
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:rgba(255,149,0,0.1);
+  color:#ff9500;
+  font-weight:600;
+  font-size:14px;
+  cursor:pointer;
+}
 </style>
 </head>
 <body>
@@ -539,8 +555,13 @@ h1{
     </div>
   </div>
 
-  <p class="hint">"Send 5k to Seyi" • "Buy 2k airtime for Mama" • "Pay NEPA bill" • "Transfer to GTBank"</p>
+  <p class="hint">"Send 5k to Seyi" • "Buy 2k airtime for Mama" • "Send 20 dollars to John" • "Pay NEPA bill"</p>
   <div class="status-card" id="status">Tap the mic to start speaking</div>
+
+  <!-- NEW: USSD Offline Mode Button -->
+  <button class="ussd-btn" onclick="showUSSD()">
+    📞 Simulate *347# Offline Mode
+  </button>
 
   <!-- MANUAL INPUT FALLBACK -->
   <div class="manual-input-box" id="manualInputBox">
@@ -556,7 +577,7 @@ h1{
 
   <div class="loading-opay" id="loadingOpay">
     <div class="spinner"></div>
-    Creating secure Opay payment link...
+    Verifying voice and creating secure Opay payment...
   </div>
 
   <div class="footer">
@@ -591,7 +612,7 @@ h1{
           View Pitch Deck
         </a>
         <a href="https://github.com/harpstech-ng" target="_blank" class="pdf-btn">
-          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0.319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0.319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
           GitHub
         </a>
       </div>
@@ -602,7 +623,7 @@ h1{
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, addDoc, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCv8Wz-zkn-Xt5yNO4j8opEeMwsOGCCv_8",
@@ -638,6 +659,9 @@ let hasSpokenWelcome = false;
 let savedContacts = {};
 let voiceFailCount = 0;
 let voicesLoaded = false;
+let liveVoiceBlob = null;
+let mediaRecorder = null;
+let audioChunks = [];
 
 let conversationState = {
   amount: null,
@@ -647,20 +671,26 @@ let conversationState = {
   phone: null,
   intent: 'transfer',
   step: 'start',
-  manualField: null
+  manualField: null,
+  duress: false,
+  currency: 'NGN',
+  original_amount: null
 };
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) window.location.href = './login.html';
   else {
     currentUser = user;
-
     try {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (userDoc.exists()) {
         currentUserData = userDoc.data();
+        if (currentUserData.locked) {
+          await speakFemale('Your account is temporarily locked for security. Contact Opay support.');
+          await signOut(auth);
+          return;
+        }
       }
-
       const contactsQuery = query(
         collection(db, 'contacts'),
         where('userId', '==', user.uid)
@@ -679,10 +709,7 @@ onAuthStateChanged(auth, async (user) => {
     } catch (e) {
       console.error('Error loading user data:', e);
     }
-
-    // Load voices immediately on page load - NO WAITING LATER
     loadVoicesFast();
-
     setTimeout(() => {
       if (!hasSpokenWelcome) {
         const name = currentUserData?.displayName || 'there';
@@ -693,7 +720,6 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// INSTANT VOICE LOADING - CACHE ON STARTUP
 function loadVoicesFast() {
   speechSynthesis.getVoices();
   setTimeout(() => {
@@ -702,31 +728,36 @@ function loadVoicesFast() {
   }, 100);
 }
 
-// INSTANT SPEAK - NO WAITING, FEMALE ONLY
 function speakFemale(text) {
   speechSynthesis.cancel();
-
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'en-NG';
-
   if (voicesLoaded && availableVoices.length > 0) {
     const femaleVoice = availableVoices.find(v => v.name === 'Google UK English Female') ||
                         availableVoices.find(v => v.name === 'Samantha') ||
                         availableVoices.find(v =>!['Google US English', 'David', 'Male'].some(m => v.name.includes(m)));
-
     if (femaleVoice) {
       utterance.voice = femaleVoice;
       utterance.pitch = 1.3;
-      utterance.rate = 0.9; // Faster
+      utterance.rate = 0.9;
     }
   }
-
   speechSynthesis.speak(utterance);
+}
+
+async function getLocation() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) return resolve(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({lat: pos.coords.latitude, lng: pos.coords.longitude}),
+      () => resolve(null),
+      {timeout: 3000}
+    );
+  });
 }
 
 async function saveContactToFirebase(contactData) {
   if (!currentUser) return;
-
   try {
     await addDoc(collection(db, 'contacts'), {
       userId: currentUser.uid,
@@ -737,7 +768,6 @@ async function saveContactToFirebase(contactData) {
       type: contactData.type || 'bank',
       createdAt: serverTimestamp()
     });
-
     savedContacts[contactData.name.toLowerCase()] = contactData;
   } catch (e) {
     console.error('Error saving contact:', e);
@@ -751,13 +781,12 @@ let finalTranscriptBuffer = '';
 if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
 
-  recognition.lang = 'en-US'; // Better for Pidgin/Yoruba
-  recognition.continuous = false; // KEY: Stop after sentence = faster
-  recognition.interimResults = false; // KEY: Don't wait
-  recognition.maxAlternatives = 1; // KEY: Only 1 result = faster
-
-  recognition.onstart = () => {
+  recognition.onstart = async () => {
     isListening = true;
     finalTranscriptBuffer = '';
     mic.classList.add('recording');
@@ -768,11 +797,28 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
     transcriptLive.classList.add('show');
     confidenceBar.classList.remove('show');
     speakFemale('I am listening.');
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      mediaRecorder.start();
+    } catch(e) {
+      console.log('Mic recording failed:', e);
+    }
   };
 
   recognition.onend = () => {
     isListening = false;
     mic.classList.remove('recording');
+
+    if (mediaRecorder && mediaRecorder.state!== 'inactive') {
+      mediaRecorder.stop();
+      mediaRecorder.onstop = () => {
+        liveVoiceBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      };
+    }
 
     if (finalTranscriptBuffer.trim()) {
       processTranscript(finalTranscriptBuffer.trim());
@@ -785,18 +831,13 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   recognition.onresult = (e) => {
     const transcript = e.results[0][0].transcript;
     const confidence = e.results[0][0].confidence;
-
     transcriptLive.innerText = transcript;
     finalTranscriptBuffer = transcript;
-
     confidenceBar.classList.add('show');
     confidenceFill.style.width = (confidence * 100) + '%';
-
     if (confidence < 0.5) {
       voiceFailCount++;
-      if (voiceFailCount >= 2) {
-        showManualInput();
-      }
+      if (voiceFailCount >= 2) showManualInput();
     } else {
       voiceFailCount = 0;
     }
@@ -806,7 +847,6 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
     isListening = false;
     mic.classList.remove('recording');
     transcriptLive.classList.remove('show');
-
     if (e.error === 'no-speech') {
       status.innerText = 'No speech detected. Tap mic again.';
     } else if (e.error === 'not-allowed') {
@@ -819,11 +859,9 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   };
 }
 
-// MANUAL INPUT FALLBACK
 function showManualInput() {
   let fieldName = 'details';
   let placeholder = 'Type here...';
-
   if (conversationState.step === 'amount') {
     fieldName = 'amount';
     placeholder = 'Enter amount (e.g. 5000)';
@@ -845,7 +883,6 @@ function showManualInput() {
     placeholder = 'Enter phone number';
     manualInputTitle.innerText = 'Enter Phone Number';
   }
-
   conversationState.manualField = conversationState.step;
   manualInput.placeholder = placeholder;
   manualInput.value = '';
@@ -857,9 +894,7 @@ function showManualInput() {
 window.submitManualInput = () => {
   const value = manualInput.value.trim();
   if (!value) return;
-
   manualInputBox.classList.remove('show');
-
   if (conversationState.manualField === 'amount') {
     conversationState.amount = parseInt(value.replace(/\D/g,''));
   } else if (conversationState.manualField === 'recipient') {
@@ -871,24 +906,23 @@ window.submitManualInput = () => {
   } else if (conversationState.manualField === 'phone') {
     conversationState.phone = value.replace(/\D/g,'');
   }
-
   processConversationStep();
 };
 
 async function processConversationStep() {
   if (conversationState.amount && conversationState.recipient) {
     const contactKey = conversationState.recipient.toLowerCase();
-
     if (savedContacts[contactKey]) {
       const contact = savedContacts[contactKey];
       conversationState.account_number = contact.account_number;
       conversationState.bank = contact.bank;
       conversationState.phone = contact.phone;
       conversationState.step = 'confirm';
-
       let confirmText;
       if (conversationState.intent === 'airtime') {
         confirmText = `Buy ₦${conversationState.amount.toLocaleString()} airtime for ${conversationState.recipient}?`;
+      } else if (conversationState.currency!== 'NGN') {
+        confirmText = `Send ${conversationState.original_amount} ${conversationState.currency}, that's ₦${conversationState.amount.toLocaleString()}, to ${conversationState.recipient}?`;
       } else {
         confirmText = `Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient}?`;
       }
@@ -916,7 +950,7 @@ async function processConversationStep() {
   } else if (!conversationState.recipient && conversationState.amount) {
     conversationState.step = 'recipient';
     const ask = conversationState.intent === 'airtime'
-     ? `Buy ₦${conversationState.amount.toLocaleString()} airtime for who?`
+    ? `Buy ₦${conversationState.amount.toLocaleString()} airtime for who?`
       : `Send ₦${conversationState.amount.toLocaleString()} to who?`;
     status.innerText = ask;
     speakFemale(ask);
@@ -988,28 +1022,29 @@ async function processTranscript(final) {
       return;
     }
 
-    // FAST BACKEND CALL WITH TIMEOUT
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s max
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
 
     const res = await fetch(BACKEND_URL + '/parse', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({transcript: transcriptToSend}),
+      body:JSON.stringify({transcript: transcriptToSend, userId: currentUser.uid}),
       signal: controller.signal
     });
 
     clearTimeout(timeoutId);
-
     if (!res.ok) throw new Error('Server error ' + res.status);
     const data = await res.json();
 
     if (data.amount) conversationState.amount = data.amount;
     if (data.recipient) conversationState.recipient = data.recipient;
     if (data.intent) conversationState.intent = data.intent;
+    if (data.duress) conversationState.duress = data.duress;
+    if (data.currency) conversationState.currency = data.currency;
+    if (data.original_amount) conversationState.original_amount = data.original_amount;
 
     currentIntent = {
-    ...data,
+   ...data,
       amount: conversationState.amount,
       recipient: conversationState.recipient,
       account_number: savedContacts[conversationState.recipient?.toLowerCase()]?.account_number || null,
@@ -1031,7 +1066,7 @@ async function processTranscript(final) {
     } else if (!conversationState.recipient && conversationState.amount) {
       conversationState.step = 'recipient';
       const ask = conversationState.intent === 'airtime'
-       ? `Buy ₦${conversationState.amount.toLocaleString()} airtime for who?`
+      ? `Buy ₦${conversationState.amount.toLocaleString()} airtime for who?`
         : `Send ₦${conversationState.amount.toLocaleString()} to who?`;
       status.innerText = ask;
       speakFemale(ask);
@@ -1039,11 +1074,9 @@ async function processTranscript(final) {
       status.innerText = data.response;
       speakFemale(data.response);
     }
-
   } catch(err) {
     console.error('Fetch error:', err);
     voiceFailCount++;
-
     if (voiceFailCount >= 2) {
       showManualInput();
     } else {
@@ -1074,14 +1107,50 @@ window.createOpayLink = async () => {
 
   confirmBox.classList.remove('show');
   loadingOpay.classList.add('show');
-  status.innerText = 'Generating secure Opay payment link...';
+  status.innerText = 'Verifying voice and generating Opay link...';
 
   try {
+    if (!liveVoiceBlob) throw new Error('Voice not recorded');
+
+    const formData = new FormData();
+    formData.append('liveVoice', liveVoiceBlob);
+    formData.append('userId', currentUser.uid);
+
+    const verifyRes = await fetch(BACKEND_URL + '/verify-voice', {
+      method: 'POST',
+      body: formData
+    });
+
+    const verifyData = await verifyRes.json();
+    if (!verifyData.match) {
+      throw new Error('Voice not recognized. Access denied.');
+    }
+
+    if (conversationState.duress) {
+      const location = await getLocation();
+      await fetch(BACKEND_URL + '/duress-alert', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          uid: currentUser.uid,
+          location: location,
+          amount: conversationState.amount,
+          recipient: conversationState.recipient,
+          timestamp: Date.now()
+        })
+      });
+      speakFemale('Transfer successful!');
+      status.innerText = 'Transfer successful!';
+      await updateDoc(doc(db, 'users', currentUser.uid), {locked: true});
+      setTimeout(() => resetMic(), 2000);
+      return;
+    }
+
     const res = await fetch(BACKEND_URL + '/create-opay-link', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        amount: conversationState.amount * 100, // Convert to kobo
+        amount: conversationState.amount * 100,
         recipient: conversationState.recipient,
         account_number: conversationState.account_number,
         bank: conversationState.bank,
@@ -1093,17 +1162,11 @@ window.createOpayLink = async () => {
     });
 
     const data = await res.json();
-
     if (data.success || data.data) {
       let opayUrl = data.paymentUrl || data.data?.cashierUrl;
-
-      // CRITICAL FIX: Remove /HarpsPay/ from URL to prevent 404
       opayUrl = opayUrl.replace('/HarpsPay/', '/');
-
       speakFemale(`Opening Opay. Amount ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient} is locked. Just enter your PIN.`);
       status.innerText = 'Redirecting to Opay...';
-
-      // Save transaction to Firebase
       await addDoc(collection(db, 'transactions'), {
         userId: currentUser.uid,
         amount: conversationState.amount * 100,
@@ -1116,7 +1179,6 @@ window.createOpayLink = async () => {
         status: 'pending',
         createdAt: serverTimestamp()
       });
-
       setTimeout(() => {
         window.location.href = opayUrl;
       }, 1500);
@@ -1126,8 +1188,8 @@ window.createOpayLink = async () => {
   } catch (err) {
     console.error('Opay link error:', err);
     loadingOpay.classList.remove('show');
-    status.innerText = 'Failed to create Opay link. Try again.';
-    speakFemale('Sorry, could not create payment link');
+    status.innerText = err.message || 'Failed to create Opay link. Try again.';
+    speakFemale(err.message || 'Sorry, could not create payment link');
   }
 };
 
@@ -1139,6 +1201,7 @@ window.resetMic = () => {
   status.classList.remove('active');
   currentIntent = null;
   voiceFailCount = 0;
+  liveVoiceBlob = null;
   conversationState = {
     amount: null,
     recipient: null,
@@ -1147,7 +1210,10 @@ window.resetMic = () => {
     phone: null,
     intent: 'transfer',
     step: 'start',
-    manualField: null
+    manualField: null,
+    duress: false,
+    currency: 'NGN',
+    original_amount: null
   };
 };
 
@@ -1161,12 +1227,35 @@ window.logout = async () => {
   window.location.href = './login.html';
 };
 
-// ABOUT MODAL
 window.showAbout = () => {
   document.getElementById('aboutModal').classList.add('show');
 };
 window.closeAbout = () => {
   document.getElementById('aboutModal').classList.remove('show');
+};
+
+// NEW: USSD Mock Feature
+window.showUSSD = () => {
+  const modal = document.createElement('div');
+  modal.id = 'ussdModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9999;color:#0f0;font-family:monospace;padding:20px;';
+  modal.innerHTML = `
+    <p>*347# Dialing...</p>
+    <p id="ussdText">Welcome to VoicePay USSD. Speak your command after the beep.</p>
+    <button onclick="startUSSDVoice()" style="background:#0f0;color:#000;padding:10px;margin-top:20px">🎤 Tap to Speak</button>
+    <button onclick="document.getElementById('ussdModal').remove()" style="position:absolute;top:10px;right:10px;background:#f00;color:#fff;border:none;padding:5px 10px">X</button>
+  `;
+  document.body.appendChild(modal);
+  speakFemale('USSD mode activated. Say send 5k to Mama.');
+};
+
+window.startUSSDVoice = () => {
+  document.getElementById('ussdText').innerText = 'Listening... "Send 5k to Mama"';
+  mic.click();
+  setTimeout(() => {
+    const modal = document.getElementById('ussdModal');
+    if(modal) modal.remove();
+  }, 8000);
 };
 </script>
 
