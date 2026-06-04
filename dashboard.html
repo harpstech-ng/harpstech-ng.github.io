@@ -339,6 +339,40 @@ h2{
   margin:0 auto 12px;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* NEW: USSD & Security Badges */
+.security-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:16px;
+}
+.security-badge{
+  padding:12px;
+  background:rgba(0,208,132,0.08);
+  border:1px solid rgba(0,208,132,0.2);
+  border-radius:12px;
+  text-align:center;
+}
+.security-badge.duress{
+  background:rgba(255,59,48,0.08);
+  border-color:rgba(255,59,48,0.2);
+}
+.security-badge svg{
+  width:24px;
+  height:24px;
+  margin-bottom:6px;
+}
+.security-badge.duress svg{color:#ff3b30}
+.security-badge h4{
+  font-size:12px;
+  font-weight:600;
+  margin-bottom:4px;
+}
+.security-badge p{
+  font-size:11px;
+  color:var(--text-muted);
+}
 </style>
 </head>
 <body>
@@ -366,6 +400,20 @@ h2{
 
 <div class="student-badge-dash" id="studentBadgeDash" style="display:none">
   🎓 Student Account - ₦10,000 daily limit
+</div>
+
+<!-- NEW: Security Features Grid -->
+<div class="security-grid">
+  <div class="security-badge">
+    <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+    <h4>Voice Lock</h4>
+    <p>Only your voice</p>
+  </div>
+  <div class="security-badge duress">
+    <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+    <h4>Duress Mode</h4>
+    <p>Safety alert ready</p>
+  </div>
 </div>
 
 <div class="card success-card" id="receiptCard" style="display:none">
@@ -419,7 +467,7 @@ h2{
 <div class="footer">
   <div class="voice-active" style="margin-bottom:12px">
     <svg fill="currentColor" viewBox="0 0 20 20"><path d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4z"/><path d="M5.5 9.5a.5.5 0 01.5.5v1a4 4 0 004 4h.01a4 4 0 004-4v-1a.5.5 0 011 0v1a5 5 0 01-4.5 4.975V18h1a.5.5 0 010 1h-3a.5.5 0 010-1h1v-2.025A5 5 0 015 11v-1a.5.5 0 01.5-.5z"/></svg>
-    Voice Biometrics Active
+    Voice Biometrics + Duress Protection Active
   </div>
   Secured by Opay
 </div>
@@ -448,47 +496,42 @@ let currentUser = null;
 let currentUserData = null;
 let voicesLoaded = false;
 
-// BULLETPROOF VOICE LOADING - FIXES CHROME MALE VOICE
 async function waitForVoices() {
   return new Promise((resolve) => {
     if (voicesLoaded && speechSynthesis.getVoices().length > 0) {
       resolve();
       return;
     }
-    
+
     const checkVoices = () => {
       const voices = speechSynthesis.getVoices();
       if (voices.length > 0) {
         availableVoices = voices;
         voicesLoaded = true;
-        console.log('Voices loaded:', voices.filter(v => v.lang.startsWith('en')).map(v => v.name));
         resolve();
       }
     };
-    
+
     speechSynthesis.onvoiceschanged = checkVoices;
     checkVoices();
-    
-    // Chrome needs this nudge
+
     if (speechSynthesis.getVoices().length === 0) {
       speechSynthesis.speak(new SpeechSynthesisUtterance(''));
     }
-    
+
     setTimeout(resolve, 1000);
   });
 }
 
-// FORCE WOMAN VOICE ONLY - NO MALE FALLBACK
 async function speakHarps(text, language = 'en') {
   await waitForVoices();
   speechSynthesis.cancel();
-  
+
   return new Promise((resolve) => {
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-NG';
-      
-      // STRICT FEMALE NAMES ONLY
+
       const FEMALE_NAMES = [
         'Google UK English Female',
         'Samantha',
@@ -498,41 +541,36 @@ async function speakHarps(text, language = 'en') {
         'Moira',
         'Fiona'
       ];
-      
+
       let femaleVoice = null;
-      
-      // Check exact female names first
+
       for (let name of FEMALE_NAMES) {
         femaleVoice = availableVoices.find(v => v.name === name);
         if (femaleVoice) break;
       }
-      
-      // Any voice with "Female" but NOT "Male"
+
       if (!femaleVoice) {
-        femaleVoice = availableVoices.find(v => 
+        femaleVoice = availableVoices.find(v =>
           v.name.toLowerCase().includes('female') &&!v.name.toLowerCase().includes('male')
         );
       }
-      
-      // Nigerian - but exclude male names
+
       if (!femaleVoice) {
-        femaleVoice = availableVoices.find(v => 
-          v.lang === 'en-NG' && 
-         !v.name.toLowerCase().includes('male') &&
-         !v.name.toLowerCase().includes('david')
+        femaleVoice = availableVoices.find(v =>
+          v.lang === 'en-NG' &&
+        !v.name.toLowerCase().includes('male') &&
+        !v.name.toLowerCase().includes('david')
         );
       }
-      
+
       if (femaleVoice) {
         utterance.voice = femaleVoice;
-        console.log('FORCED FEMALE VOICE:', femaleVoice.name);
       }
-      
-      // MAXIMUM FEMININE SETTINGS
+
       utterance.pitch = 1.25;
       utterance.rate = 0.82;
       utterance.volume = 1;
-      
+
       utterance.onend = resolve;
       utterance.onerror = resolve;
       speechSynthesis.speak(utterance);
@@ -545,21 +583,20 @@ onAuthStateChanged(auth, async (user) => {
     window.location.href = './login.html';
     return;
   }
-  
+
   currentUser = user;
   await waitForVoices();
-  
-  // Get username from Firestore
+
   try {
     const userDoc = await getDoc(doc(db, 'users', user.uid));
     if (userDoc.exists()) {
       currentUserData = userDoc.data();
       document.getElementById('userName').innerText = currentUserData.displayName || user.email.split('@')[0];
-      
+
       if (currentUserData.isStudent) {
         document.getElementById('studentBadgeDash').style.display = 'inline-flex';
       }
-      
+
       await speakHarps(`Welcome back, ${currentUserData.displayName || 'User'}. Your dashboard is ready.`, 'en');
     } else {
       document.getElementById('userName').innerText = user.email.split('@')[0];
@@ -568,10 +605,9 @@ onAuthStateChanged(auth, async (user) => {
     console.error('Error loading user:', e);
     document.getElementById('userName').innerText = user.email.split('@')[0];
   }
-  
+
   await loadHistoryFromFirestore(user.uid);
-  
-  // Check for receipt from mock-opay
+
   const receipt = JSON.parse(localStorage.getItem('receipt') || 'null');
   if (receipt) {
     await displayReceipt(receipt);
@@ -579,11 +615,10 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// SAVE TO FIRESTORE
 async function saveToFirestore(receipt, uid) {
   try {
     await addDoc(collection(db, 'transactions'), {
-    ...receipt,
+   ...receipt,
       userId: uid,
       createdAt: serverTimestamp()
     });
@@ -592,14 +627,12 @@ async function saveToFirestore(receipt, uid) {
   }
 }
 
-// LOAD HISTORY - HANDLES MISSING INDEX GRACEFULLY
 async function loadHistoryFromFirestore(uid) {
   const list = document.getElementById('historyList');
-  
+
   try {
     let querySnapshot;
-    
-    // Try with orderBy first - requires index
+
     try {
       const q = query(
         collection(db, 'transactions'),
@@ -609,8 +642,7 @@ async function loadHistoryFromFirestore(uid) {
       );
       querySnapshot = await getDocs(q);
     } catch (indexErr) {
-      // Fallback: query without orderBy if index missing
-      console.warn('Firestore index missing. Using fallback query. Create index in Firebase Console.');
+      console.warn('Firestore index missing. Using fallback query.');
       const q = query(
         collection(db, 'transactions'),
         where('userId', '==', uid),
@@ -618,24 +650,23 @@ async function loadHistoryFromFirestore(uid) {
       );
       querySnapshot = await getDocs(q);
     }
-    
+
     if (querySnapshot.empty) {
       list.innerHTML = '<div class="empty">No transactions yet. Make your first voice payment!</div>';
       return;
     }
-    
+
     let history = [];
     querySnapshot.forEach((doc) => {
       history.push({ id: doc.id,...doc.data() });
     });
-    
-    // Sort manually by createdAt if orderBy failed
+
     history.sort((a, b) => {
       const aTime = a.createdAt?.toMillis? a.createdAt.toMillis() : new Date(a.date || 0).getTime();
       const bTime = b.createdAt?.toMillis? b.createdAt.toMillis() : new Date(b.date || 0).getTime();
       return bTime - aTime;
     });
-    
+
     list.innerHTML = history.slice(0, 5).map(tx => `
       <div class="history-item">
         <div class="history-left">
@@ -651,7 +682,7 @@ async function loadHistoryFromFirestore(uid) {
         </div>
       </div>
     `).join('');
-    
+
   } catch (e) {
     console.error('Error loading history:', e);
     list.innerHTML = '<div class="empty">Error loading transactions. Check Firestore indexes in Firebase Console.</div>';
@@ -665,12 +696,12 @@ async function displayReceipt(receipt) {
   document.getElementById('bank').innerText = receipt.bank || 'Opay';
   document.getElementById('time').innerText = timeAgo(receipt.date);
   document.getElementById('ref').innerText = receipt.reference || receipt.txnId || '-';
-  
+
   if (currentUser) {
     await saveToFirestore(receipt, currentUser.uid);
     await loadHistoryFromFirestore(currentUser.uid);
   }
-  
+
   try {
     const res = await fetch(BACKEND_URL + '/generate-receipt', {
       method: 'POST',
