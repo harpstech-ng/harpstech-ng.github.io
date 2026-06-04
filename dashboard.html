@@ -427,7 +427,7 @@ h2{
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCv8Wz-zkn-Xt5yNO4j8opEeMwsOGCCv_8",
@@ -446,69 +446,100 @@ const BACKEND_URL = 'https://harps-voicepay.onrender.com';
 let availableVoices = [];
 let currentUser = null;
 let currentUserData = null;
+let voicesLoaded = false;
 
-// FORCE LOAD NIGERIAN WOMAN VOICE - FIX CHROME MAN VOICE
-function loadVoices() {
-  availableVoices = speechSynthesis.getVoices();
-  console.log('Available voices:', availableVoices.map(v => v.name + ' (' + v.lang + ')'));
-}
-speechSynthesis.onvoiceschanged = loadVoices;
-loadVoices();
-
-// AGGRESSIVE FEMALE VOICE SELECTION - WORKS ON CHROME + SAFARI
-function speakHarps(text, language = 'en') {
+// BULLETPROOF VOICE LOADING - FIXES CHROME MALE VOICE
+async function waitForVoices() {
   return new Promise((resolve) => {
-    speechSynthesis.cancel();
+    if (voicesLoaded && speechSynthesis.getVoices().length > 0) {
+      resolve();
+      return;
+    }
+    
+    const checkVoices = () => {
+      const voices = speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        availableVoices = voices;
+        voicesLoaded = true;
+        console.log('Voices loaded:', voices.filter(v => v.lang.startsWith('en')).map(v => v.name));
+        resolve();
+      }
+    };
+    
+    speechSynthesis.onvoiceschanged = checkVoices;
+    checkVoices();
+    
+    // Chrome needs this nudge
+    if (speechSynthesis.getVoices().length === 0) {
+      speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+    }
+    
+    setTimeout(resolve, 1000);
+  });
+}
+
+// FORCE WOMAN VOICE ONLY - NO MALE FALLBACK
+async function speakHarps(text, language = 'en') {
+  await waitForVoices();
+  speechSynthesis.cancel();
+  
+  return new Promise((resolve) => {
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-NG';
       
-      // PRIORITY 1: Nigerian English Female
-      let femaleVoice = availableVoices.find(v => 
-        v.lang === 'en-NG' && (v.name.toLowerCase().includes('female') || v.name.includes('Google'))
-      );
+      // STRICT FEMALE NAMES ONLY
+      const FEMALE_NAMES = [
+        'Google UK English Female',
+        'Samantha',
+        'Victoria',
+        'Karen',
+        'Tessa',
+        'Moira',
+        'Fiona'
+      ];
       
-      // PRIORITY 2: Any Nigerian voice
-      if (!femaleVoice) femaleVoice = availableVoices.find(v => v.lang === 'en-NG');
+      let femaleVoice = null;
       
-      // PRIORITY 3: Google UK Female - Chrome default female
-      if (!femaleVoice) femaleVoice = availableVoices.find(v => 
-        v.name === 'Google UK English Female'
-      );
+      // Check exact female names first
+      for (let name of FEMALE_NAMES) {
+        femaleVoice = availableVoices.find(v => v.name === name);
+        if (femaleVoice) break;
+      }
       
-      // PRIORITY 4: Samantha - Safari/iOS female
-      if (!femaleVoice) femaleVoice = availableVoices.find(v => 
-        v.name === 'Samantha' || v.name.includes('Samantha')
-      );
+      // Any voice with "Female" but NOT "Male"
+      if (!femaleVoice) {
+        femaleVoice = availableVoices.find(v => 
+          v.name.toLowerCase().includes('female') &&!v.name.toLowerCase().includes('male')
+        );
+      }
       
-      // PRIORITY 5: Any voice with "female" in name
-      if (!femaleVoice) femaleVoice = availableVoices.find(v => 
-        v.name.toLowerCase().includes('female')
-      );
-      
-      // PRIORITY 6: Any English voice NOT male
-      if (!femaleVoice) femaleVoice = availableVoices.find(v => 
-        v.lang.startsWith('en') &&!v.name.toLowerCase().includes('male')
-      );
+      // Nigerian - but exclude male names
+      if (!femaleVoice) {
+        femaleVoice = availableVoices.find(v => 
+          v.lang === 'en-NG' && 
+         !v.name.toLowerCase().includes('male') &&
+         !v.name.toLowerCase().includes('david')
+        );
+      }
       
       if (femaleVoice) {
         utterance.voice = femaleVoice;
-        console.log('Using voice:', femaleVoice.name, femaleVoice.lang);
+        console.log('FORCED FEMALE VOICE:', femaleVoice.name);
       }
       
-      // FORCE WOMAN SETTINGS
-      utterance.pitch = 1.15; // Higher = more feminine
-      utterance.rate = 0.85; // Slower = less robotic
+      // MAXIMUM FEMININE SETTINGS
+      utterance.pitch = 1.25;
+      utterance.rate = 0.82;
       utterance.volume = 1;
       
       utterance.onend = resolve;
       utterance.onerror = resolve;
       speechSynthesis.speak(utterance);
-    }, 150);
+    }, 100);
   });
 }
 
-// LOAD USERNAME + TRANSACTIONS FROM FIREBASE
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = './login.html';
@@ -516,6 +547,7 @@ onAuthStateChanged(auth, async (user) => {
   }
   
   currentUser = user;
+  await waitForVoices();
   
   // Get username from Firestore
   try {
@@ -527,6 +559,8 @@ onAuthStateChanged(auth, async (user) => {
       if (currentUserData.isStudent) {
         document.getElementById('studentBadgeDash').style.display = 'inline-flex';
       }
+      
+      await speakHarps(`Welcome back, ${currentUserData.displayName || 'User'}. Your dashboard is ready.`, 'en');
     } else {
       document.getElementById('userName').innerText = user.email.split('@')[0];
     }
@@ -535,7 +569,6 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('userName').innerText = user.email.split('@')[0];
   }
   
-  // Load transactions from Firestore
   await loadHistoryFromFirestore(user.uid);
   
   // Check for receipt from mock-opay
@@ -546,11 +579,11 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// SAVE TO FIRESTORE INSTEAD OF LOCALSTORAGE
+// SAVE TO FIRESTORE
 async function saveToFirestore(receipt, uid) {
   try {
     await addDoc(collection(db, 'transactions'), {
-     ...receipt,
+    ...receipt,
       userId: uid,
       createdAt: serverTimestamp()
     });
@@ -559,31 +592,51 @@ async function saveToFirestore(receipt, uid) {
   }
 }
 
-// LOAD HISTORY FROM FIRESTORE
+// LOAD HISTORY - HANDLES MISSING INDEX GRACEFULLY
 async function loadHistoryFromFirestore(uid) {
   const list = document.getElementById('historyList');
   
   try {
-    const q = query(
-      collection(db, 'transactions'),
-      where('userId', '==', uid),
-      orderBy('createdAt', 'desc'),
-      limit(5)
-    );
+    let querySnapshot;
     
-    const querySnapshot = await getDocs(q);
+    // Try with orderBy first - requires index
+    try {
+      const q = query(
+        collection(db, 'transactions'),
+        where('userId', '==', uid),
+        orderBy('createdAt', 'desc'),
+        limit(5)
+      );
+      querySnapshot = await getDocs(q);
+    } catch (indexErr) {
+      // Fallback: query without orderBy if index missing
+      console.warn('Firestore index missing. Using fallback query. Create index in Firebase Console.');
+      const q = query(
+        collection(db, 'transactions'),
+        where('userId', '==', uid),
+        limit(20)
+      );
+      querySnapshot = await getDocs(q);
+    }
     
     if (querySnapshot.empty) {
       list.innerHTML = '<div class="empty">No transactions yet. Make your first voice payment!</div>';
       return;
     }
     
-    const history = [];
+    let history = [];
     querySnapshot.forEach((doc) => {
       history.push({ id: doc.id,...doc.data() });
     });
     
-    list.innerHTML = history.map(tx => `
+    // Sort manually by createdAt if orderBy failed
+    history.sort((a, b) => {
+      const aTime = a.createdAt?.toMillis? a.createdAt.toMillis() : new Date(a.date || 0).getTime();
+      const bTime = b.createdAt?.toMillis? b.createdAt.toMillis() : new Date(b.date || 0).getTime();
+      return bTime - aTime;
+    });
+    
+    list.innerHTML = history.slice(0, 5).map(tx => `
       <div class="history-item">
         <div class="history-left">
           <div class="history-icon">💸</div>
@@ -601,7 +654,7 @@ async function loadHistoryFromFirestore(uid) {
     
   } catch (e) {
     console.error('Error loading history:', e);
-    list.innerHTML = '<div class="empty">Error loading transactions</div>';
+    list.innerHTML = '<div class="empty">Error loading transactions. Check Firestore indexes in Firebase Console.</div>';
   }
 }
 
@@ -613,13 +666,11 @@ async function displayReceipt(receipt) {
   document.getElementById('time').innerText = timeAgo(receipt.date);
   document.getElementById('ref').innerText = receipt.reference || receipt.txnId || '-';
   
-  // Save to Firestore
   if (currentUser) {
     await saveToFirestore(receipt, currentUser.uid);
     await loadHistoryFromFirestore(currentUser.uid);
   }
   
-  // Generate voice receipt
   try {
     const res = await fetch(BACKEND_URL + '/generate-receipt', {
       method: 'POST',
@@ -651,9 +702,9 @@ function timeAgo(timestamp) {
   return `${days}d ago`;
 }
 
-window.speakReceipt = function() {
+window.speakReceipt = async function() {
   const text = document.getElementById('voiceText').innerText.replace(/"/g,'');
-  speakHarps(text, 'en');
+  await speakHarps(text, 'en');
 }
 
 window.checkBalance = async function() {
