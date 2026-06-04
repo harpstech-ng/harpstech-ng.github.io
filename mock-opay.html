@@ -15,6 +15,7 @@
       --text-muted:#6B7280;
       --card-bg:#FFFFFF;
       --border:#E5E7EB;
+      --red:#EF4444;
     }
     *{margin:0;padding:0;box-sizing:border-box}
     body{
@@ -27,15 +28,15 @@
       padding:20px;
       margin:0;
     }
-    .container{
+   .container{
       width:100%;
       max-width:440px;
     }
-    .security-header{
+   .security-header{
       text-align:center;
       margin-bottom:24px;
     }
-    .opay-logo{
+   .opay-logo{
       width:90px;
       height:90px;
       margin:0 auto 16px;
@@ -51,13 +52,13 @@
       0%,100%{transform:translateY(0)}
       50%{transform:translateY(-8px)}
     }
-    .opay-logo img{
+   .opay-logo img{
       width:60px;
       height:60px;
       border-radius:14px;
       object-fit:cover;
     }
-    .badge{
+   .badge{
       display:inline-flex;
       align-items:center;
       gap:6px;
@@ -71,8 +72,8 @@
       border:1px solid #FFD54F;
       box-shadow:0 4px 12px rgba(255,213,79,0.2);
     }
-    .badge svg{width:14px;height:14px}
-    .card{
+   .badge svg{width:14px;height:14px}
+   .card{
       background:var(--card-bg);
       padding:32px 28px;
       border-radius:24px;
@@ -82,7 +83,7 @@
       position:relative;
       overflow:hidden;
     }
-    .card::before{
+   .card::before{
       content:'';
       position:absolute;
       top:0;
@@ -99,14 +100,14 @@
       text-align:center;
       letter-spacing:-0.5px;
     }
-    .recipient-box{
+   .recipient-box{
       background:linear-gradient(135deg, #F9FAFB, #F3F4F6);
       padding:18px;
       border-radius:16px;
       border:1px solid var(--border);
       margin-bottom:20px;
     }
-    .recipient-label{
+   .recipient-label{
       font-size:12px;
       color:var(--text-muted);
       text-transform:uppercase;
@@ -114,19 +115,19 @@
       font-weight:600;
       margin-bottom:6px;
     }
-    .recipient-name{
+   .recipient-name{
       font-size:18px;
       color:var(--text);
       font-weight:700;
     }
-    .amount-section{
+   .amount-section{
       text-align:center;
       margin:28px 0;
       padding:24px 0;
       border-top:1px solid var(--border);
       border-bottom:1px solid var(--border);
     }
-    .amount-label{
+   .amount-label{
       font-size:13px;
       color:var(--text-muted);
       text-transform:uppercase;
@@ -134,7 +135,7 @@
       font-weight:600;
       margin-bottom:8px;
     }
-    .amount{
+   .amount{
       font-size:48px;
       color:var(--green);
       font-weight:700;
@@ -146,14 +147,14 @@
       0%,100%{transform:scale(1)}
       50%{transform:scale(1.02)}
     }
-    .locked-features{
+   .locked-features{
       background:linear-gradient(135deg, #F0FDF4, #ECFDF5);
       padding:18px;
       border-radius:14px;
       border:1px solid #BBF7D0;
       margin:20px 0;
     }
-    .locked-item{
+   .locked-item{
       display:flex;
       align-items:center;
       gap:10px;
@@ -162,13 +163,67 @@
       font-weight:500;
       margin:10px 0;
     }
-    .locked-item svg{
+   .locked-item svg{
       width:18px;
       height:18px;
       color:var(--green);
       flex-shrink:0;
     }
-    .pay-btn{
+   .pin-section{
+      margin:24px 0;
+      display:none;
+    }
+   .pin-section.show{
+      display:block;
+      animation:slide-up 0.4s ease;
+    }
+    @keyframes slide-up{
+      from{opacity:0;transform:translateY(15px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+   .pin-label{
+      font-size:14px;
+      color:var(--text);
+      font-weight:600;
+      margin-bottom:12px;
+      text-align:center;
+    }
+   .pin-input{
+      display:flex;
+      gap:12px;
+      justify-content:center;
+      margin-bottom:16px;
+    }
+   .pin-dot{
+      width:50px;
+      height:60px;
+      border:2px solid var(--border);
+      border-radius:12px;
+      font-size:24px;
+      text-align:center;
+      font-weight:700;
+      color:var(--text);
+      background:var(--card-bg);
+      transition:all 0.2s ease;
+    }
+   .pin-dot:focus{
+      outline:none;
+      border-color:var(--green);
+      box-shadow:0 0 0 3px rgba(0,184,117,0.1);
+    }
+   .pin-dot.filled{
+      border-color:var(--green);
+      background:rgba(0,184,117,0.05);
+    }
+   .pin-error{
+      color:var(--red);
+      font-size:13px;
+      text-align:center;
+      margin-top:8px;
+      display:none;
+    }
+   .pin-error.show{display:block}
+   .pay-btn{
       background:linear-gradient(135deg, var(--green), #009D5F);
       color:white;
       border:none;
@@ -187,13 +242,18 @@
       justify-content:center;
       gap:10px;
     }
-    .pay-btn:hover{
+   .pay-btn:hover{
       transform:translateY(-2px);
       box-shadow:0 16px 40px rgba(0,184,117,0.45);
     }
-    .pay-btn:active{transform:scale(0.98)}
-    .pay-btn svg{width:20px;height:20px}
-    .security-note{
+   .pay-btn:active{transform:scale(0.98)}
+   .pay-btn:disabled{
+      opacity:0.6;
+      cursor:not-allowed;
+      transform:none;
+    }
+   .pay-btn svg{width:20px;height:20px}
+   .security-note{
       text-align:center;
       font-size:11px;
       color:var(--text-muted);
@@ -204,8 +264,8 @@
       justify-content:center;
       gap:6px;
     }
-    .security-note svg{width:14px;height:14px}
-    .voicepay-badge{
+   .security-note svg{width:14px;height:14px}
+   .voicepay-badge{
       text-align:center;
       margin-top:20px;
       padding-top:20px;
@@ -217,9 +277,102 @@
       justify-content:center;
       gap:6px;
     }
-    .voicepay-badge strong{
+   .voicepay-badge strong{
       color:var(--green);
       font-weight:600;
+    }
+   .download-section{
+      margin-top:24px;
+      padding-top:24px;
+      border-top:1px solid var(--border);
+    }
+   .download-title{
+      font-size:13px;
+      color:var(--text-muted);
+      text-align:center;
+      margin-bottom:12px;
+      font-weight:600;
+    }
+   .download-btns{
+      display:flex;
+      gap:12px;
+    }
+   .download-btn{
+      flex:1;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:var(--card-bg);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      font-size:13px;
+      font-weight:600;
+      color:var(--text);
+      text-decoration:none;
+      transition:all 0.2s ease;
+    }
+   .download-btn:hover{
+      border-color:var(--green);
+      background:rgba(0,184,117,0.05);
+      transform:translateY(-1px);
+    }
+   .download-btn svg{width:18px;height:18px}
+   .success-overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.7);
+      backdrop-filter:blur(10px);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:1000;
+    }
+   .success-overlay.show{display:flex}
+   .success-modal{
+      background:var(--card-bg);
+      padding:40px;
+      border-radius:24px;
+      text-align:center;
+      max-width:320px;
+      animation:success-pop 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes success-pop{
+      from{opacity:0;transform:scale(0.8)}
+      to{opacity:1;transform:scale(1)}
+    }
+   .success-icon{
+      width:80px;
+      height:80px;
+      background:linear-gradient(135deg, var(--green), #00D084);
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      margin:0 auto 20px;
+      animation:success-check 0.6s ease;
+    }
+    @keyframes success-check{
+      0%{transform:scale(0)}
+      50%{transform:scale(1.1)}
+      100%{transform:scale(1)}
+    }
+   .success-icon svg{
+      width:40px;
+      height:40px;
+      color:white;
+    }
+   .success-title{
+      font-size:24px;
+      font-weight:700;
+      color:var(--text);
+      margin-bottom:8px;
+    }
+   .success-text{
+      font-size:14px;
+      color:var(--text-muted);
+      margin-bottom:24px;
     }
   </style>
 </head>
@@ -263,9 +416,20 @@
         </div>
       </div>
 
-      <button class="pay-btn" onclick="paySuccess()">
+      <div class="pin-section" id="pinSection">
+        <div class="pin-label">Enter your 4-digit Opay PIN</div>
+        <div class="pin-input">
+          <input type="password" class="pin-dot" maxlength="1" id="pin1">
+          <input type="password" class="pin-dot" maxlength="1" id="pin2">
+          <input type="password" class="pin-dot" maxlength="1" id="pin3">
+          <input type="password" class="pin-dot" maxlength="1" id="pin4">
+        </div>
+        <div class="pin-error" id="pinError">Incorrect PIN. Try 1234 for demo.</div>
+      </div>
+
+      <button class="pay-btn" id="payBtn" onclick="handlePay()">
         <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
-        Pay Now Securely
+        <span id="payBtnText">Proceed to Pay</span>
       </button>
 
       <div class="security-note">
@@ -276,32 +440,195 @@
       <div class="voicepay-badge">
         Voice-authenticated by <strong>VoicePay</strong> + Opay
       </div>
+
+      <div class="download-section">
+        <div class="download-title">Don't have Opay? Download now</div>
+        <div class="download-btns">
+          <a href="https://play.google.com/store/apps/details?id=com.opay.user" target="_blank" class="download-btn">
+            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M3,20.5V3.5C3,2.7 3.6,2.1 4.4,2.1L15.1,12.8L4.4,23.5C3.6,23.9 3,23.3 3,20.5M16.8,12.8L6.2,2.2C6.4,2.1 6.6,2 6.9,2H17.5C18.6,2 19.5,2.9 19.5,4V20C19.5,21.1 18.6,22 17.5,22H6.9C6.6,22 6.4,21.9 6.2,21.8L16.8,12.8Z"/></svg>
+            Android
+          </a>
+          <a href="https://apps.apple.com/ng/app/opay/id1467884566" target="_blank" class="download-btn">
+            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M18.7,13.4C18.6,13.4 18.4,13.5 18.3,13.5C18.2,13.5 18.1,13.5 18,13.5C17.1,13.5 16.3,13.1 15.8,12.5C15.3,11.9 15,11.1 15,10.2C15,9.3 15.3,8.5 15.8,7.9C16.3,7.3 17.1,6.9 18,6.9C18.1,6.9 18.2,6.9 18.3,6.9C18.4,6.9 18.6,6.9 18.7,6.9C18.7,6.7 18.7,6.5 18.7,6.3C18.7,4.4 17.9,2.9 16.8,2C15.7,1.1 14.2,0.6 12.7,0.6C11.2,0.6 9.7,1.1 8.6,2C7.5,2.9 6.7,4.4 6.7,6.3C6.7,6.5 6.7,6.7 6.7,6.9C6.8,6.9 6.9,6.9 7,6.9C7.1,6.9 7.2,6.9 7.3,6.9C8.2,6.9 9,7.3 9.5,7.9C10,8.5 10.3,9.3 10.3,10.2C10.3,11.1 10,11.9 9.5,12.5C9,13.1 8.2,13.5 7.3,13.5C7.2,13.5 7.1,13.5 7,13.5C6.9,13.5 6.8,13.5 6.7,13.5C6.7,13.7 6.7,13.9 6.7,14.1C6.7,16 7.5,17.5 8.6,18.4C9.7,19.3 11.2,19.8 12.7,19.8C14.2,19.8 15.7,19.3 16.8,18.4C17.9,17.5 18.7,16 18.7,14.1C18.7,13.9 18.7,13.7 18.7,13.5V13.4Z"/></svg>
+            iPhone
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 
-<script>
+  <div class="success-overlay" id="successOverlay">
+    <div class="success-modal">
+      <div class="success-icon">
+        <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+      </div>
+      <div class="success-title">Payment Successful!</div>
+      <div class="success-text">₦<span id="successAmt"></span> sent to <span id="successName"></span></div>
+    </div>
+  </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCv8Wz-zkn-Xt5yNO4j8opEeMwsOGCCv_8",
+  authDomain: "harps-voicepay.firebaseapp.com",
+  projectId: "harps-voicepay",
+  storageBucket: "harps-voicepay.firebasestorage.app",
+  messagingSenderId: "434033801758",
+  appId: "1:434033801758:web:75833560ce9160c3f50c0f",
+  measurementId: "G-47WZZXQNGC"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
 const p = new URLSearchParams(location.search);
-const amt = parseInt(p.get('amount') || '0') / 100;
+const amt = parseInt(p.get('amount') || '0');
 const name = p.get('name') || 'Recipient';
 const ref = p.get('ref') || 'demo_' + Date.now();
+const lang = p.get('lang') || 'en';
+let currentUser = null;
 
-document.getElementById('amt').textContent = amt.toLocaleString('en-NG', {
-  minimumFractionDigits:2, 
+document.getElementById('amt').textContent = (amt / 100).toLocaleString('en-NG', {
+  minimumFractionDigits:2,
   maximumFractionDigits:2
 });
 document.getElementById('name').textContent = name;
 
-function paySuccess(){
-  // Show success animation
-  document.querySelector('.pay-btn').innerHTML = `
+onAuthStateChanged(auth, (user) => {
+  currentUser = user;
+});
+
+// FEMALE VOICE ONLY
+let availableVoices = [];
+let voicesLoaded = false;
+
+async function waitForVoices() {
+  return new Promise((resolve) => {
+    if (voicesLoaded && speechSynthesis.getVoices().length > 0) {
+      resolve();
+      return;
+    }
+    const checkVoices = () => {
+      const voices = speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        availableVoices = voices;
+        voicesLoaded = true;
+        resolve();
+      }
+    };
+    speechSynthesis.onvoiceschanged = checkVoices;
+    checkVoices();
+    if (speechSynthesis.getVoices().length === 0) {
+      speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+    }
+    setTimeout(resolve, 1000);
+  });
+}
+
+async function speakFemale(text) {
+  await waitForVoices();
+  speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-NG';
+
+  const MALE_BLACKLIST = ['Google US English', 'David', 'Alex', 'Male', 'Daniel'];
+  let femaleVoice = availableVoices.find(v => v.name === 'Google UK English Female') ||
+                    availableVoices.find(v => v.name === 'Samantha') ||
+                    availableVoices.find(v =>
+                      v.name.toLowerCase().includes('female') &&
+                    !MALE_BLACKLIST.some(m => v.name.includes(m))
+                    );
+
+  if (!femaleVoice) return;
+
+  utterance.voice = femaleVoice;
+  utterance.pitch = 1.3;
+  utterance.rate = 0.82;
+  speechSynthesis.speak(utterance);
+}
+
+// PIN INPUT LOGIC
+const pinInputs = document.querySelectorAll('.pin-dot');
+pinInputs.forEach((input, idx) => {
+  input.addEventListener('input', (e) => {
+    if (e.target.value) {
+      e.target.classList.add('filled');
+      if (idx < 3) pinInputs[idx + 1].focus();
+    } else {
+      e.target.classList.remove('filled');
+    }
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' &&!e.target.value && idx > 0) {
+      pinInputs[idx - 1].focus();
+    }
+  });
+});
+
+let pinStep = false;
+
+window.handlePay = () => {
+  if (!pinStep) {
+    // Show PIN section
+    document.getElementById('pinSection').classList.add('show');
+    document.getElementById('payBtnText').textContent = 'Confirm Payment';
+    pinInputs[0].focus();
+    pinStep = true;
+    speakFemale('Please enter your Opay PIN to confirm payment.');
+  } else {
+    // Verify PIN
+    const pin = Array.from(pinInputs).map(i => i.value).join('');
+    if (pin === '1234') {
+      paySuccess();
+    } else {
+      document.getElementById('pinError').classList.add('show');
+      pinInputs.forEach(i => {
+        i.value = '';
+        i.classList.remove('filled');
+      });
+      pinInputs[0].focus();
+      speakFemale('Incorrect PIN. Please try again. Use 1234 for demo.');
+    }
+  }
+};
+
+async function paySuccess(){
+  document.getElementById('pinError').classList.remove('show');
+  document.getElementById('payBtn').disabled = true;
+  document.getElementById('payBtn').innerHTML = `
     <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-    Payment Authorized
+    Processing...
   `;
-  document.querySelector('.pay-btn').style.background = 'linear-gradient(135deg, #10B981, #059669)';
-  
-  // CRITICAL: Save receipt so dashboard shows success
+
+  // Save to Firebase
+  if (currentUser) {
+    try {
+      await addDoc(collection(db, 'transactions'), {
+        userId: currentUser.uid,
+        amount: amt,
+        recipient: name,
+        bank: 'Opay',
+        intent: 'transfer',
+        reference: ref,
+        txnId: ref,
+        status: 'success',
+        createdAt: serverTimestamp()
+      });
+    } catch (e) {
+      console.error('Firebase save error:', e);
+    }
+  }
+
+  // Save receipt to localStorage for dashboard
   const receipt = {
-    amount: amt * 100, // Back to kobo
+    amount: amt,
     recipient: name,
     bank: 'Opay',
     intent: 'transfer',
@@ -311,13 +638,17 @@ function paySuccess(){
     status: 'success'
   };
   localStorage.setItem('receipt', JSON.stringify(receipt));
-  
+
+  // Show success modal
+  document.getElementById('successAmt').textContent = (amt / 100).toLocaleString('en-NG', {minimumFractionDigits:2});
+  document.getElementById('successName').textContent = name;
+  document.getElementById('successOverlay').classList.add('show');
+
+  await speakFemale(`Payment successful. ${amt / 100} Naira sent to ${name}.`);
+
   setTimeout(() => {
-    alert('Demo Complete!\n\n✅ Amount ₦' + amt.toLocaleString('en-NG', {minimumFractionDigits:2}) + ' was LOCKED\n✅ Pre-filled from VoicePay voice command\n✅ User cannot edit amount\n\nIn production: User would enter Opay PIN to complete.\n\nFor judges: This proves VoicePay → Opay integration with locked amounts works.');
-    
-    // FIXED: Correct redirect to your dashboard
     window.location.href = 'https://harpstech-ng.github.io/dashboard.html?payment=success&ref=' + ref;
-  }, 800);
+  }, 2500);
 }
 </script>
 </body>
