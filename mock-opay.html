@@ -28,15 +28,15 @@
       padding:20px;
       margin:0;
     }
-   .container{
+  .container{
       width:100%;
       max-width:440px;
     }
-   .security-header{
+  .security-header{
       text-align:center;
       margin-bottom:24px;
     }
-   .opay-logo{
+  .opay-logo{
       width:90px;
       height:90px;
       margin:0 auto 16px;
@@ -52,13 +52,13 @@
       0%,100%{transform:translateY(0)}
       50%{transform:translateY(-8px)}
     }
-   .opay-logo img{
+  .opay-logo img{
       width:60px;
       height:60px;
       border-radius:14px;
       object-fit:cover;
     }
-   .badge{
+  .badge{
       display:inline-flex;
       align-items:center;
       gap:6px;
@@ -72,8 +72,8 @@
       border:1px solid #FFD54F;
       box-shadow:0 4px 12px rgba(255,213,79,0.2);
     }
-   .badge svg{width:14px;height:14px}
-   .card{
+  .badge svg{width:14px;height:14px}
+  .card{
       background:var(--card-bg);
       padding:32px 28px;
       border-radius:24px;
@@ -83,7 +83,7 @@
       position:relative;
       overflow:hidden;
     }
-   .card::before{
+  .card::before{
       content:'';
       position:absolute;
       top:0;
@@ -100,14 +100,14 @@
       text-align:center;
       letter-spacing:-0.5px;
     }
-   .recipient-box{
+  .recipient-box{
       background:linear-gradient(135deg, #F9FAFB, #F3F4F6);
       padding:18px;
       border-radius:16px;
       border:1px solid var(--border);
       margin-bottom:20px;
     }
-   .recipient-label{
+  .recipient-label{
       font-size:12px;
       color:var(--text-muted);
       text-transform:uppercase;
@@ -115,19 +115,19 @@
       font-weight:600;
       margin-bottom:6px;
     }
-   .recipient-name{
+  .recipient-name{
       font-size:18px;
       color:var(--text);
       font-weight:700;
     }
-   .amount-section{
+  .amount-section{
       text-align:center;
       margin:28px 0;
       padding:24px 0;
       border-top:1px solid var(--border);
       border-bottom:1px solid var(--border);
     }
-   .amount-label{
+  .amount-label{
       font-size:13px;
       color:var(--text-muted);
       text-transform:uppercase;
@@ -135,7 +135,7 @@
       font-weight:600;
       margin-bottom:8px;
     }
-   .amount{
+  .amount{
       font-size:48px;
       color:var(--green);
       font-weight:700;
@@ -147,14 +147,14 @@
       0%,100%{transform:scale(1)}
       50%{transform:scale(1.02)}
     }
-   .locked-features{
+  .locked-features{
       background:linear-gradient(135deg, #F0FDF4, #ECFDF5);
       padding:18px;
       border-radius:14px;
       border:1px solid #BBF7D0;
       margin:20px 0;
     }
-   .locked-item{
+  .locked-item{
       display:flex;
       align-items:center;
       gap:10px;
@@ -163,17 +163,17 @@
       font-weight:500;
       margin:10px 0;
     }
-   .locked-item svg{
+  .locked-item svg{
       width:18px;
       height:18px;
       color:var(--green);
       flex-shrink:0;
     }
-   .pin-section{
+  .pin-section{
       margin:24px 0;
       display:none;
     }
-   .pin-section.show{
+  .pin-section.show{
       display:block;
       animation:slide-up 0.4s ease;
     }
@@ -181,20 +181,20 @@
       from{opacity:0;transform:translateY(15px)}
       to{opacity:1;transform:translateY(0)}
     }
-   .pin-label{
+  .pin-label{
       font-size:14px;
       color:var(--text);
       font-weight:600;
       margin-bottom:12px;
       text-align:center;
     }
-   .pin-input{
+  .pin-input{
       display:flex;
       gap:12px;
       justify-content:center;
       margin-bottom:16px;
     }
-   .pin-dot{
+  .pin-dot{
       width:50px;
       height:60px;
       border:2px solid var(--border);
@@ -206,24 +206,24 @@
       background:var(--card-bg);
       transition:all 0.2s ease;
     }
-   .pin-dot:focus{
+  .pin-dot:focus{
       outline:none;
       border-color:var(--green);
       box-shadow:0 0 0 3px rgba(0,184,117,0.1);
     }
-   .pin-dot.filled{
+  .pin-dot.filled{
       border-color:var(--green);
       background:rgba(0,184,117,0.05);
     }
-   .pin-error{
+  .pin-error{
       color:var(--red);
       font-size:13px;
       text-align:center;
       margin-top:8px;
       display:none;
     }
-   .pin-error.show{display:block}
-   .pay-btn{
+  .pin-error.show{display:block}
+  .pay-btn{
       background:linear-gradient(135deg, var(--green), #009D5F);
       color:white;
       border:none;
@@ -242,18 +242,18 @@
       justify-content:center;
       gap:10px;
     }
-   .pay-btn:hover{
+  .pay-btn:hover{
       transform:translateY(-2px);
       box-shadow:0 16px 40px rgba(0,184,117,0.45);
     }
-   .pay-btn:active{transform:scale(0.98)}
-   .pay-btn:disabled{
+  .pay-btn:active{transform:scale(0.98)}
+  .pay-btn:disabled{
       opacity:0.6;
       cursor:not-allowed;
       transform:none;
     }
-   .pay-btn svg{width:20px;height:20px}
-   .security-note{
+  .pay-btn svg{width:20px;height:20px}
+  .security-note{
       text-align:center;
       font-size:11px;
       color:var(--text-muted);
@@ -264,8 +264,8 @@
       justify-content:center;
       gap:6px;
     }
-   .security-note svg{width:14px;height:14px}
-   .voicepay-badge{
+  .security-note svg{width:14px;height:14px}
+  .voicepay-badge{
       text-align:center;
       margin-top:20px;
       padding-top:20px;
@@ -277,27 +277,27 @@
       justify-content:center;
       gap:6px;
     }
-   .voicepay-badge strong{
+  .voicepay-badge strong{
       color:var(--green);
       font-weight:600;
     }
-   .download-section{
+  .download-section{
       margin-top:24px;
       padding-top:24px;
       border-top:1px solid var(--border);
     }
-   .download-title{
+  .download-title{
       font-size:13px;
       color:var(--text-muted);
       text-align:center;
       margin-bottom:12px;
       font-weight:600;
     }
-   .download-btns{
+  .download-btns{
       display:flex;
       gap:12px;
     }
-   .download-btn{
+  .download-btn{
       flex:1;
       padding:12px;
       border-radius:12px;
@@ -313,13 +313,13 @@
       text-decoration:none;
       transition:all 0.2s ease;
     }
-   .download-btn:hover{
+  .download-btn:hover{
       border-color:var(--green);
       background:rgba(0,184,117,0.05);
       transform:translateY(-1px);
     }
-   .download-btn svg{width:18px;height:18px}
-   .success-overlay{
+  .download-btn svg{width:18px;height:18px}
+  .success-overlay{
       position:fixed;
       inset:0;
       background:rgba(0,0,0,0.7);
@@ -329,8 +329,8 @@
       justify-content:center;
       z-index:1000;
     }
-   .success-overlay.show{display:flex}
-   .success-modal{
+  .success-overlay.show{display:flex}
+  .success-modal{
       background:var(--card-bg);
       padding:40px;
       border-radius:24px;
@@ -342,7 +342,7 @@
       from{opacity:0;transform:scale(0.8)}
       to{opacity:1;transform:scale(1)}
     }
-   .success-icon{
+  .success-icon{
       width:80px;
       height:80px;
       background:linear-gradient(135deg, var(--green), #00D084);
@@ -358,18 +358,18 @@
       50%{transform:scale(1.1)}
       100%{transform:scale(1)}
     }
-   .success-icon svg{
+  .success-icon svg{
       width:40px;
       height:40px;
       color:white;
     }
-   .success-title{
+  .success-title{
       font-size:24px;
       font-weight:700;
       color:var(--text);
       margin-bottom:8px;
     }
-   .success-text{
+  .success-text{
       font-size:14px;
       color:var(--text-muted);
       margin-bottom:24px;
@@ -419,10 +419,10 @@
       <div class="pin-section" id="pinSection">
         <div class="pin-label">Enter your 4-digit Opay PIN</div>
         <div class="pin-input">
-          <input type="password" class="pin-dot" maxlength="1" id="pin1">
-          <input type="password" class="pin-dot" maxlength="1" id="pin2">
-          <input type="password" class="pin-dot" maxlength="1" id="pin3">
-          <input type="password" class="pin-dot" maxlength="1" id="pin4">
+          <input type="password" class="pin-dot" maxlength="1" id="pin1" inputmode="numeric">
+          <input type="password" class="pin-dot" maxlength="1" id="pin2" inputmode="numeric">
+          <input type="password" class="pin-dot" maxlength="1" id="pin3" inputmode="numeric">
+          <input type="password" class="pin-dot" maxlength="1" id="pin4" inputmode="numeric">
         </div>
         <div class="pin-error" id="pinError">Incorrect PIN. Try 1234 for demo.</div>
       </div>
@@ -444,12 +444,12 @@
       <div class="download-section">
         <div class="download-title">Don't have Opay? Download now</div>
         <div class="download-btns">
-          <a href="https://play.google.com/store/apps/details?id=com.opay.user" target="_blank" class="download-btn">
+          <a href="https://play.google.com/store/apps/details?id=com.opay.wallet" target="_blank" class="download-btn">
             <svg fill="currentColor" viewBox="0 0 24 24"><path d="M3,20.5V3.5C3,2.7 3.6,2.1 4.4,2.1L15.1,12.8L4.4,23.5C3.6,23.9 3,23.3 3,20.5M16.8,12.8L6.2,2.2C6.4,2.1 6.6,2 6.9,2H17.5C18.6,2 19.5,2.9 19.5,4V20C19.5,21.1 18.6,22 17.5,22H6.9C6.6,22 6.4,21.9 6.2,21.8L16.8,12.8Z"/></svg>
             Android
           </a>
-          <a href="https://apps.apple.com/ng/app/opay/id1467884566" target="_blank" class="download-btn">
-            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M18.7,13.4C18.6,13.4 18.4,13.5 18.3,13.5C18.2,13.5 18.1,13.5 18,13.5C17.1,13.5 16.3,13.1 15.8,12.5C15.3,11.9 15,11.1 15,10.2C15,9.3 15.3,8.5 15.8,7.9C16.3,7.3 17.1,6.9 18,6.9C18.1,6.9 18.2,6.9 18.3,6.9C18.4,6.9 18.6,6.9 18.7,6.9C18.7,6.7 18.7,6.5 18.7,6.3C18.7,4.4 17.9,2.9 16.8,2C15.7,1.1 14.2,0.6 12.7,0.6C11.2,0.6 9.7,1.1 8.6,2C7.5,2.9 6.7,4.4 6.7,6.3C6.7,6.5 6.7,6.7 6.7,6.9C6.8,6.9 6.9,6.9 7,6.9C7.1,6.9 7.2,6.9 7.3,6.9C8.2,6.9 9,7.3 9.5,7.9C10,8.5 10.3,9.3 10.3,10.2C10.3,11.1 10,11.9 9.5,12.5C9,13.1 8.2,13.5 7.3,13.5C7.2,13.5 7.1,13.5 7,13.5C6.9,13.5 6.8,13.5 6.7,13.5C6.7,13.7 6.7,13.9 6.7,14.1C6.7,16 7.5,17.5 8.6,18.4C9.7,19.3 11.2,19.8 12.7,19.8C14.2,19.8 15.7,19.3 16.8,18.4C17.9,17.5 18.7,16 18.7,14.1C18.7,13.9 18.7,13.7 18.7,13.5V13.4Z"/></svg>
+          <a href="https://apps.apple.com/ng/app/opay-we-are-beyond-banking/id1467884566" target="_blank" class="download-btn">
+            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M18.71,19.5C17.88,20.74 17,21.95 15.66,21.97C14.32,22 13.89,21.18 12.37,21.18C10.84,21.18 10.37,21.95 9.1,22C7.79,22.05 6.8,20.68 5.96,19.47C4.25,17 2.94,12.45 4.7,9.39C5.57,7.87 7.13,6.91 8.82,6.88C10.1,6.86 11.32,7.75 12.11,7.75C12.89,7.75 14.37,6.68 15.92,6.84C16.57,6.87 18.39,7.1 19.56,8.82C19.47,8.88 17.39,10.1 17.41,12.63C17.44,15.65 20.06,16.66 20.09,16.67C20.06,16.74 19.67,18.11 18.71,19.5M13,3.5C13.73,2.67 14.94,2.04 15.94,2C16.07,3.17 15.6,4.35 14.9,5.19C14.21,6.04 13.07,6.7 11.95,6.61C11.8,5.46 12.36,4.26 13,3.5Z"/></svg>
             iPhone
           </a>
         </div>
@@ -464,6 +464,7 @@
       </div>
       <div class="success-title">Payment Successful!</div>
       <div class="success-text">₦<span id="successAmt"></span> sent to <span id="successName"></span></div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:16px">Redirecting to dashboard...</div>
     </div>
   </div>
 
@@ -490,7 +491,6 @@ const p = new URLSearchParams(location.search);
 const amt = parseInt(p.get('amount') || '0');
 const name = p.get('name') || 'Recipient';
 const ref = p.get('ref') || 'demo_' + Date.now();
-const lang = p.get('lang') || 'en';
 let currentUser = null;
 
 document.getElementById('amt').textContent = (amt / 100).toLocaleString('en-NG', {
@@ -542,15 +542,15 @@ async function speakFemale(text) {
                     availableVoices.find(v => v.name === 'Samantha') ||
                     availableVoices.find(v =>
                       v.name.toLowerCase().includes('female') &&
-                    !MALE_BLACKLIST.some(m => v.name.includes(m))
+                  !MALE_BLACKLIST.some(m => v.name.includes(m))
                     );
 
-  if (!femaleVoice) return;
-
-  utterance.voice = femaleVoice;
-  utterance.pitch = 1.3;
-  utterance.rate = 0.82;
-  speechSynthesis.speak(utterance);
+  if (femaleVoice) {
+    utterance.voice = femaleVoice;
+    utterance.pitch = 1.3;
+    utterance.rate = 0.82;
+    speechSynthesis.speak(utterance);
+  }
 }
 
 // PIN INPUT LOGIC
@@ -576,14 +576,12 @@ let pinStep = false;
 
 window.handlePay = () => {
   if (!pinStep) {
-    // Show PIN section
     document.getElementById('pinSection').classList.add('show');
     document.getElementById('payBtnText').textContent = 'Confirm Payment';
     pinInputs[0].focus();
     pinStep = true;
     speakFemale('Please enter your Opay PIN to confirm payment.');
   } else {
-    // Verify PIN
     const pin = Array.from(pinInputs).map(i => i.value).join('');
     if (pin === '1234') {
       paySuccess();
@@ -607,26 +605,22 @@ async function paySuccess(){
     Processing...
   `;
 
-  // Save to Firebase
+  // Save to Firebase - non-blocking
   if (currentUser) {
-    try {
-      await addDoc(collection(db, 'transactions'), {
-        userId: currentUser.uid,
-        amount: amt,
-        recipient: name,
-        bank: 'Opay',
-        intent: 'transfer',
-        reference: ref,
-        txnId: ref,
-        status: 'success',
-        createdAt: serverTimestamp()
-      });
-    } catch (e) {
-      console.error('Firebase save error:', e);
-    }
+    addDoc(collection(db, 'transactions'), {
+      userId: currentUser.uid,
+      amount: amt,
+      recipient: name,
+      bank: 'Opay',
+      intent: 'transfer',
+      reference: ref,
+      txnId: ref,
+      status: 'success',
+      createdAt: serverTimestamp()
+    }).catch(e => console.error('Firebase save error:', e));
   }
 
-  // Save receipt to localStorage for dashboard
+  // Save receipt to localStorage immediately
   const receipt = {
     amount: amt,
     recipient: name,
@@ -644,10 +638,11 @@ async function paySuccess(){
   document.getElementById('successName').textContent = name;
   document.getElementById('successOverlay').classList.add('show');
 
-  await speakFemale(`Payment successful. ${amt / 100} Naira sent to ${name}.`);
+  speakFemale(`Payment successful. ${amt / 100} Naira sent to ${name}.`);
 
+  // CRITICAL FIX: Guaranteed redirect to dashboard
   setTimeout(() => {
-    window.location.href = 'https://harpstech-ng.github.io/dashboard.html?payment=success&ref=' + ref;
+    window.location.replace('https://harpstech-ng.github.io/dashboard.html?payment=success&ref=' + ref);
   }, 2500);
 }
 </script>
