@@ -169,14 +169,14 @@ input:focus{
   font-size:12px;
   color:#666;
 }
-.footer .security{
+.footer.security{
   display:inline-flex;
   align-items:center;
   gap:6px;
   color:#888;
   margin-bottom:6px;
 }
-.footer .security svg{width:14px;height:14px}
+.footer.security svg{width:14px;height:14px}
 .error,.success{
   padding:12px;
   border-radius:10px;
@@ -399,16 +399,17 @@ input:focus{
     <p class="sub" id="subtitle">Speak to send money, fast and secure</p>
     <p class="sub-bio">Voice-authenticated login for maximum security</p>
   </div>
-  
+
   <div class="error" id="error"></div>
   <div class="success" id="success"></div>
-  
+
   <div class="step-indicator" id="stepIndicator" style="display:none">
     <div class="step-dot active" id="sdot1"></div>
     <div class="step-dot" id="sdot2"></div>
     <div class="step-dot" id="sdot3"></div>
+    <div class="step-dot" id="sdot4"></div>
   </div>
-  
+
   <div id="stepAuth">
     <input type="email" id="email" placeholder="Email" autocomplete="email">
     <div class="input-group" id="passGroup">
@@ -425,7 +426,7 @@ input:focus{
       🎓 Student Account - ₦10,000 daily limit
     </div>
     <input type="text" id="fullName" placeholder="Full Name" maxlength="50">
-    
+
     <div class="checkbox-wrap">
       <label class="checkbox-label">
         <input type="checkbox" id="ageCheck" checked onchange="toggleAge()">
@@ -443,11 +444,12 @@ input:focus{
   <div id="stepVoice" style="display:none">
     <div class="voice-box">
       <button class="voice-btn" id="voiceBtn" onclick="recordVoice()">🎤</button>
-      <div class="voice-status" id="voiceStatus">Tap to record phrase 1 of 3</div>
+      <div class="voice-status" id="voiceStatus">Tap to record phrase 1 of 4</div>
       <div class="voice-dots">
         <div class="voice-dot" id="vdot1"></div>
         <div class="voice-dot" id="vdot2"></div>
         <div class="voice-dot" id="vdot3"></div>
+        <div class="voice-dot" id="vdot4"></div>
       </div>
     </div>
     <div style="text-align:center;font-style:italic;color:var(--green);font-size:13px;margin-bottom:14px" id="voicePhrase">
@@ -455,7 +457,7 @@ input:focus{
     </div>
     <button class="btn" onclick="completeSignup()" id="finishBtn" disabled>Complete Setup</button>
   </div>
-  
+
   <div class="toggle" id="toggleWrap">
     <span id="toggleText">Don't have an account? </span>
     <span onclick="toggleMode()">Sign Up</span>
@@ -494,7 +496,7 @@ input:focus{
           View Pitch Deck
         </a>
         <a href="https://github.com/harpstech-ng" target="_blank" class="pdf-btn">
-          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0.319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0.319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
           GitHub
         </a>
       </div>
@@ -533,17 +535,18 @@ let tempUserData = {};
 let availableVoices = [];
 let hasSpokenWelcome = false;
 
+// NEW: 4 phrases now - 3 normal + 1 duress
 const phrases = [
   "My voice is my password",
   "VoicePay secure",
-  "Send money with my voice"
+  "Send money with my voice",
+  "Transfer urgent money" // DURESS PHRASE
 ];
 
 onAuthStateChanged(auth, (user) => {
   if (user) window.location.href = './index.html';
 });
 
-// FORCE FEMALE VOICE
 function loadVoices() {
   availableVoices = speechSynthesis.getVoices();
 }
@@ -556,21 +559,21 @@ function speakHarps(text) {
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-NG';
-      
+
       let femaleVoice = availableVoices.find(v => v.name === 'Google UK English Female') ||
                        availableVoices.find(v => v.name === 'Samantha') ||
                        availableVoices.find(v => v.lang === 'en-NG') ||
                        availableVoices.find(v => v.name.toLowerCase().includes('female')) ||
                        availableVoices.find(v => v.lang.startsWith('en') &&!v.name.toLowerCase().includes('male'));
-      
+
       if (femaleVoice) {
         utterance.voice = femaleVoice;
       }
-      
+
       utterance.pitch = 1.2;
       utterance.rate = 0.85;
       utterance.volume = 1;
-      
+
       utterance.onend = resolve;
       utterance.onerror = resolve;
       speechSynthesis.speak(utterance);
@@ -581,13 +584,13 @@ function speakHarps(text) {
 window.toggleMode = () => {
   isLogin =!isLogin;
   signupStep = 1;
-  document.getElementById('title').innerText = isLogin ? 'VoicePay' : 'Create Account';
-  document.getElementById('subtitle').innerText = isLogin ? 'Speak to send money, fast and secure' : 'Join VoicePay powered by Opay';
-  document.getElementById('mainBtn').innerText = isLogin ? 'Login' : 'Continue';
-  document.getElementById('toggleText').innerText = isLogin ? "Don't have an account? " : "Already have an account? ";
-  document.getElementById('stepIndicator').style.display = isLogin ? 'none' : 'flex';
+  document.getElementById('title').innerText = isLogin? 'VoicePay' : 'Create Account';
+  document.getElementById('subtitle').innerText = isLogin? 'Speak to send money, fast and secure' : 'Join VoicePay powered by Opay';
+  document.getElementById('mainBtn').innerText = isLogin? 'Login' : 'Continue';
+  document.getElementById('toggleText').innerText = isLogin? "Don't have an account? " : "Already have an account? ";
+  document.getElementById('stepIndicator').style.display = isLogin? 'none' : 'flex';
   showStep('stepAuth');
-  
+
   if (!isLogin &&!hasSpokenWelcome) {
     setTimeout(() => {
       speakHarps('Welcome. Create your secure voice account.');
@@ -600,8 +603,8 @@ window.togglePass = () => {
   showPassword =!showPassword;
   const p = document.getElementById('password');
   const btn = document.getElementById('eyeBtn');
-  p.type = showPassword ? 'text' : 'password';
-  btn.textContent = showPassword ? '🙈' : '👁️';
+  p.type = showPassword? 'text' : 'password';
+  btn.textContent = showPassword? '🙈' : '👁️';
 };
 
 window.forgotPass = () => {
@@ -616,10 +619,11 @@ function showStep(stepId) {
     document.getElementById(id).style.display = 'none';
   });
   document.getElementById(stepId).style.display = 'block';
-  
+
   if (!isLogin) {
-    ['sdot1','sdot2','sdot3'].forEach((id,i) => {
-      document.getElementById(id).classList.toggle('active', i < signupStep);
+    ['sdot1','sdot2','sdot3','sdot4'].forEach((id,i) => {
+      const dot = document.getElementById(id);
+      if (dot) dot.classList.toggle('active', i < signupStep);
     });
   }
 }
@@ -635,11 +639,11 @@ window.handleAuth = async () => {
   const email = document.getElementById('email').value.trim();
   const pass = document.getElementById('password').value;
   if(!email ||!pass){ showError('Please fill all fields'); return }
-  
+
   btn.disabled = true;
   btn.innerText = 'Please wait...';
   clearMsg();
-  
+
   try{
     if(isLogin){
       const user = await signInWithEmailAndPassword(auth,email,pass);
@@ -656,7 +660,7 @@ window.handleAuth = async () => {
   }catch(e){
     showError(getErrorMsg(e.code));
     btn.disabled = false;
-    btn.innerText = isLogin ? 'Login' : 'Continue';
+    btn.innerText = isLogin? 'Login' : 'Continue';
   }
 };
 
@@ -717,15 +721,15 @@ window.recordVoice = async () => {
       document.getElementById(`vdot${currentPhrase + 1}`).classList.add('active');
       currentPhrase++;
 
-      if (currentPhrase < 3) {
-        status.textContent = `Tap to record phrase ${currentPhrase + 1} of 3`;
-        document.getElementById('voicePhrase').textContent = `Say: "${phrases[currentPhrase]}"`;
-        await speakHarps(`Good. Now say: ${phrases[currentPhrase]}`);
+      if (currentPhrase < 4) {
+        status.textContent = `Tap to record phrase ${currentPhrase + 1} of 4`;
+        document.getElementById('voicePhrase').textContent = currentPhrase === 3? `Duress phrase: "${phrases[currentPhrase]}"` : `Say: "${phrases[currentPhrase]}"`;
+        await speakHarps(currentPhrase === 3? `Now record your duress phrase. Say: ${phrases[currentPhrase]}` : `Good. Now say: ${phrases[currentPhrase]}`);
       } else {
         status.textContent = 'Voice ID captured! ✅';
         document.getElementById('finishBtn').disabled = false;
         btn.style.display = 'none';
-        await speakHarps('Voice captured. Complete setup.');
+        await speakHarps('Voice captured including duress phrase. Complete setup.');
       }
 
       stream.getTracks().forEach(track => track.stop());
@@ -760,7 +764,9 @@ window.completeSignup = async () => {
       fullName: tempUserData.fullName,
       displayName: tempUserData.fullName,
       isStudent: isStudent,
-      dailyLimit: isStudent ? 1000000 : 50000000,
+      dailyLimit: isStudent? 1000000 : 50000000,
+      voiceEnrolled: true,
+      duressPhrase: phrases[3], // NEW: Save duress phrase
       createdAt: serverTimestamp()
     });
 
@@ -772,6 +778,7 @@ window.completeSignup = async () => {
     formData.append('email', tempUserData.email);
     formData.append('fullName', tempUserData.fullName);
     formData.append('isStudent', isStudent);
+    formData.append('duressPhrase', phrases[3]); // NEW
 
     await fetch(BACKEND_URL + '/complete-signup', {
       method: 'POST',
@@ -796,10 +803,10 @@ window.resetPass = async () => {
   const btn = document.getElementById('mainBtn');
   const email = document.getElementById('email').value.trim();
   if(!email){ showError('Enter your email first'); return }
-  
+
   btn.disabled = true;
   btn.innerText = 'Sending...';
-  
+
   try{
     await sendPasswordResetEmail(auth,email);
     showSuccess('Reset link sent! Check your email inbox AND spam folder 📧');
