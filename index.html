@@ -611,7 +611,7 @@ h1{
 
 <!-- ABOUT BUTTON -->
 <button class="about-btn" onclick="showAbout()">
-  <svg fill="currentColor" viewBox="0 0 20 20"><path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"/></svg>
+  <svg fill="currentColor" viewBox="0 0 20 20"><path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"/></svg>
   About VoicePay
 </button>
 
@@ -684,6 +684,7 @@ let voicesLoaded = false;
 let liveVoiceBlob = null;
 let mediaRecorder = null;
 let audioChunks = [];
+let detectedUserLang = 'en-NG'; // NEW: Track user language
 
 let conversationState = {
   amount: null,
@@ -699,8 +700,118 @@ let conversationState = {
   original_amount: null
 };
 
+// NEW: Language detection function
+function detectLanguage(text) {
+  const lower = text.toLowerCase();
+  if (/bawo|owo|se jowo|jowo|ekaro|ekasan/.test(lower)) return 'yo-NG'; // Yoruba
+  if (/kedu|ego|biko|ndewo|daalu/.test(lower)) return 'ig-NG'; // Igbo  
+  if (/sannu|kudi|yaya|ina|barka/.test(lower)) return 'ha-NG'; // Hausa
+  if (/abeg|wey|dey|na|make|how far/.test(lower)) return 'en-NG'; // Pidgin - uses English TTS
+  return 'en-NG'; // Default English
+}
+
+// NEW: Multi-language response dictionary
+const responses = {
+  'en-NG': {
+    listening: 'I am listening.',
+    hello: (name) => `Hello ${name}. Tap the microphone and tell me what to do.`,
+    noSpeech: 'No speech detected. Tap mic again.',
+    micBlocked: 'Mic permission denied. Enable in Settings → Safari → Microphone',
+    micError: 'Mic error. Use demo button below or type.',
+    notSupported: 'Voice not supported on this browser. Use demo button.',
+    howMuch: (recipient) => `How much should I send to ${recipient}?`,
+    whoToSend: (amount) => `Send ₦${amount.toLocaleString()} to who?`,
+    whoToAirtime: (amount) => `Buy ₦${amount.toLocaleString()} airtime for who?`,
+    confirmSend: (amount, recipient) => `Send ₦${amount.toLocaleString()} to ${recipient}?`,
+    confirmAirtime: (amount, recipient) => `Buy ₦${amount.toLocaleString()} airtime for ${recipient}?`,
+    firstTimeAcc: (recipient) => `First time sending to ${recipient}. Please say the account number.`,
+    firstTimePhone: (recipient) => `First time sending to ${recipient}. Please say their phone number.`,
+    saved: (amount, recipient) => `Saved. Send ₦${amount.toLocaleString()} to ${recipient}?`,
+    didNotCatch: 'Sorry, I did not understand. Please speak again clearly.',
+    typeField: (field) => `Sorry, I didn't catch that. Please type the ${field}.`,
+    verifying: 'Verifying voice and generating Opay link...',
+    voiceFailed: 'Voice not recognized. Access denied.',
+    duressSuccess: 'Transfer successful!',
+    openingOpay: (amount, recipient) => `Opening Opay. Amount ₦${amount.toLocaleString()} to ${recipient} is locked. Just enter your PIN.`,
+    opayFailed: 'Sorry, could not create payment link',
+    tapToStart: 'Tap the mic to start'
+  },
+  'yo-NG': {
+    listening: 'Mo n gbọ ọ.',
+    hello: (name) => `Bawo ni ${name}. Tẹ microphone ki o sọ ohun ti o fẹ ṣe.`,
+    noSpeech: 'N kò gbọ ohun. Tẹ mic lẹẹkansi.',
+    micBlocked: 'A ko gba mic laaye. Lọ si Settings → Safari → Microphone',
+    micError: 'Aṣiṣe mic. Lo bọtini demo tabi kọ.',
+    notSupported: 'Voice ko ṣiṣẹ lori browser yii. Lo bọtini demo.',
+    howMuch: (recipient) => `Elo ni o fẹ fi ranṣẹ si ${recipient}?`,
+    whoToSend: (amount) => `Ta ni o fẹ fi ₦${amount.toLocaleString()} ranṣẹ si?`,
+    whoToAirtime: (amount) => `Ta ni o fẹ ra ₦${amount.toLocaleString()} airtime fun?`,
+    confirmSend: (amount, recipient) => `Ṣe o fẹ fi ₦${amount.toLocaleString()} ranṣẹ si ${recipient}?`,
+    confirmAirtime: (amount, recipient) => `Ṣe o fẹ ra ₦${amount.toLocaleString()} airtime fun ${recipient}?`,
+    firstTimeAcc: (recipient) => `Eyi ni igba akọkọ fun ${recipient}. Jọwọ sọ nọmba akọọlẹ.`,
+    firstTimePhone: (recipient) => `Eyi ni igba akọkọ fun ${recipient}. Jọwọ sọ nọmba foonu.`,
+    saved: (amount, recipient) => `A ti fipamọ. Ṣe o fẹ fi ₦${amount.toLocaleString()} ranṣẹ si ${recipient}?`,
+    didNotCatch: 'Ma binu, n kò gbọ. Jọwọ sọ lẹẹkansi kedere.',
+    typeField: (field) => `Ma binu, n kò gbọ. Jọwọ kọ ${field}.`,
+    verifying: 'N ṣe ayẹwo ohun ati ṣẹda link Opay...',
+    voiceFailed: 'A ko mọ ohun rẹ. Wiwọle ti kọ.',
+    duressSuccess: 'Gbigbe owo ṣaṣeyọri!',
+    openingOpay: (amount, recipient) => `N ṣi Opay. Iye ₦${amount.toLocaleString()} si ${recipient} ti pa. Kan tẹ PIN rẹ.`,
+    opayFailed: 'Ma binu, ko le ṣẹda link isanwo',
+    tapToStart: 'Tẹ mic lati bẹrẹ'
+  },
+  'ig-NG': {
+    listening: 'Ana m ege ntị.',
+    hello: (name) => `Kedu ${name}. Pịa microphone ma gwa m ihe ị chọrọ ime.`,
+    noSpeech: 'Anụghị m olu. Pịa mic ọzọ.',
+    micBlocked: 'Anabataghị mic. Gaa Settings → Safari → Microphone',
+    micError: 'Njehie mic. Jiri bọtịnụ demo ma ọ bụ dee.',
+    notSupported: 'Voice anaghị arụ ọrụ na browser a. Jiri bọtịnụ demo.',
+    howMuch: (recipient) => `Ego ole ka ị chọrọ iziga ${recipient}?`,
+    whoToSend: (amount) => `Onye ka ị chọrọ iziga ₦${amount.toLocaleString()}?`,
+    whoToAirtime: (amount) => `Onye ka ị chọrọ ịzụta ₦${amount.toLocaleString()} airtime nye?`,
+    confirmSend: (amount, recipient) => `Ị chọrọ iziga ₦${amount.toLocaleString()} nye ${recipient}?`,
+    confirmAirtime: (amount, recipient) => `Ị chọrọ ịzụta ₦${amount.toLocaleString()} airtime nye ${recipient}?`,
+    firstTimeAcc: (recipient) => `Nke a bụ oge mbụ maka ${recipient}. Biko kwuo nọmba akaụntụ.`,
+    firstTimePhone: (recipient) => `Nke a bụ oge mbụ maka ${recipient}. Biko kwuo nọmba ekwentị.`,
+    saved: (amount, recipient) => `Echekwara. Ị chọrọ iziga ₦${amount.toLocaleString()} nye ${recipient}?`,
+    didNotCatch: 'Ndo, aghọtaghị m. Biko kwuo ọzọ nke ọma.',
+    typeField: (field) => `Ndo, aghọtaghị m. Biko dee ${field}.`,
+    verifying: 'Na-enyocha olu ma na-emepụta njikọ Opay...',
+    voiceFailed: 'Amataghị olu gị. Anabataghị nnabata.',
+    duressSuccess: 'Mbufe ego gara nke ọma!',
+    openingOpay: (amount, recipient) => `Na-emepe Opay. Ọnụ ₦${amount.toLocaleString()} nye ${recipient} akpọchiela. Naanị tinye PIN gị.`,
+    opayFailed: 'Ndo, enweghị ike ịmepụta njikọ ịkwụ ụgwọ',
+    tapToStart: 'Pịa mic ka ịmalite'
+  },
+  'ha-NG': {
+    listening: 'Ina sauraro.',
+    hello: (name) => `Sannu ${name}. Danna microphone kuma ka gaya mani abin da za ka yi.`,
+    noSpeech: 'Ban ji magana ba. Danna mic kuma.',
+    micBlocked: 'An hana mic. Je zuwa Settings → Safari → Microphone',
+    micError: 'Kuskuren mic. Yi amfani da maɓallin demo ko rubuta.',
+    notSupported: 'Voice ba ya aiki a wannan browser. Yi amfani da maɓallin demo.',
+    howMuch: (recipient) => `Nawa kake son aika wa ${recipient}?`,
+    whoToSend: (amount) => `Wa kake son aika ₦${amount.toLocaleString()}?`,
+    whoToAirtime: (amount) => `Wa kake son sayan ₦${amount.toLocaleString()} airtime wa?`,
+    confirmSend: (amount, recipient) => `Kana son aika ₦${amount.toLocaleString()} zuwa ${recipient}?`,
+    confirmAirtime: (amount, recipient) => `Kana son sayan ₦${amount.toLocaleString()} airtime wa ${recipient}?`,
+    firstTimeAcc: (recipient) => `Wannan ne karo na farko da ${recipient}. Don Allah faɗi lambar asusu.`,
+    firstTimePhone: (recipient) => `Wannan ne karo na farko da ${recipient}. Don Allah faɗi lambar waya.`,
+    saved: (amount, recipient) => `An adana. Kana son aika ₦${amount.toLocaleString()} zuwa ${recipient}?`,
+    didNotCatch: 'Yi hakuri, ban gane ba. Don Allah sake magana a bayyane.',
+    typeField: (field) => `Yi hakuri, ban gane ba. Don Allah rubuta ${field}.`,
+    verifying: 'Ana tabbatar da murya da ƙirƙirar haɗin Opay...',
+    voiceFailed: 'Ba a gane muryar ka ba. An hana shiga.',
+    duressSuccess: 'Canja wurin kuɗi ya yi nasara!',
+    openingOpay: (amount, recipient) => `Ana buɗe Opay. Adadin ₦${amount.toLocaleString()} zuwa ${recipient} an kulle. Kawai shigar da PIN ɗinka.`,
+    opayFailed: 'Yi hakuri, ba za a iya ƙirƙirar haɗin biya ba',
+    tapToStart: 'Danna mic don farawa'
+  }
+};
+
 // Check HTTPS
-if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+if (location.protocol!== 'https:' && location.hostname!== 'localhost') {
   status.innerText = '⚠️ Mic requires HTTPS. Please use https:// link.';
   status.classList.add('active');
 }
@@ -714,7 +825,7 @@ onAuthStateChanged(auth, async (user) => {
       if (userDoc.exists()) {
         currentUserData = userDoc.data();
         if (currentUserData.locked) {
-          await speakFemale('Your account is temporarily locked for security. Contact Opay support.');
+          await speakFemale('Your account is temporarily locked for security. Contact Opay support.', 'en-NG');
           await signOut(auth);
           return;
         }
@@ -741,7 +852,7 @@ onAuthStateChanged(auth, async (user) => {
     setTimeout(() => {
       if (!hasSpokenWelcome) {
         const name = currentUserData?.displayName || 'there';
-        speakFemale(`Hello ${name}. Tap the microphone and tell me what to do.`);
+        speakFemale(responses[detectedUserLang].hello(name), detectedUserLang);
         hasSpokenWelcome = true;
       }
     }, 500);
@@ -756,16 +867,23 @@ function loadVoicesFast() {
   }, 100);
 }
 
-function speakFemale(text) {
+// UPDATED: Multi-language speak function
+function speakFemale(text, lang = 'en-NG') {
   speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'en-NG';
+  utterance.lang = lang;
+  
   if (voicesLoaded && availableVoices.length > 0) {
-    const femaleVoice = availableVoices.find(v => v.name === 'Google UK English Female') ||
-                        availableVoices.find(v => v.name === 'Samantha') ||
-                        availableVoices.find(v =>!['Google US English', 'David', 'Male'].some(m => v.name.includes(m)));
-    if (femaleVoice) {
-      utterance.voice = femaleVoice;
+    // Try to find voice for specific language
+    let voice = availableVoices.find(v => v.lang === lang);
+    if (!voice) {
+      // Fallback to English female voice
+      voice = availableVoices.find(v => v.name === 'Google UK English Female') ||
+              availableVoices.find(v => v.name === 'Samantha') ||
+              availableVoices.find(v =>!['Google US English', 'David', 'Male'].some(m => v.name.includes(m)));
+    }
+    if (voice) {
+      utterance.voice = voice;
       utterance.pitch = 1.3;
       utterance.rate = 0.9;
     }
@@ -809,7 +927,7 @@ let finalTranscriptBuffer = '';
 if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
-  recognition.lang = 'en-US';
+  recognition.lang = 'en-US'; // Keep English for detection, but we'll handle multi-lang
   recognition.continuous = false;
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
@@ -818,14 +936,14 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
     isListening = true;
     finalTranscriptBuffer = '';
     mic.classList.add('recording');
-    status.innerText = 'Listening... Speak clearly';
+    status.innerText = responses[detectedUserLang].listening;
     status.classList.add('active');
     confirmBox.classList.remove('show');
     manualInputBox.classList.remove('show');
     transcriptLive.classList.add('show');
     confidenceBar.classList.remove('show');
     demoBtn.classList.remove('show');
-    speakFemale('I am listening.');
+    speakFemale(responses[detectedUserLang].listening, detectedUserLang);
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -853,7 +971,7 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
       processTranscript(finalTranscriptBuffer.trim());
     } else {
       transcriptLive.classList.remove('show');
-      status.innerText = 'Tap the mic to start speaking';
+      status.innerText = responses[detectedUserLang].tapToStart;
     }
   };
 
@@ -877,20 +995,19 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
     mic.classList.remove('recording');
     transcriptLive.classList.remove('show');
     if (e.error === 'no-speech') {
-      status.innerText = 'No speech detected. Tap mic again.';
+      status.innerText = responses[detectedUserLang].noSpeech;
     } else if (e.error === 'not-allowed') {
-      status.innerText = 'Mic permission denied. Enable in Settings → Safari → Microphone';
+      status.innerText = responses[detectedUserLang].micBlocked;
       demoBtn.classList.add('show');
     } else if (e.error!== 'aborted') {
-      status.innerText = 'Mic error. Use demo button below or type.';
+      status.innerText = responses[detectedUserLang].micError;
       voiceFailCount++;
       demoBtn.classList.add('show');
       if (voiceFailCount >= 2) showManualInput();
     }
   };
 } else {
-  // iPhone Safari doesn't support Web Speech API
-  status.innerText = 'Voice not supported on this browser. Use demo button.';
+  status.innerText = responses[detectedUserLang].notSupported;
   demoBtn.classList.add('show');
 }
 
@@ -923,7 +1040,7 @@ function showManualInput() {
   manualInput.value = '';
   manualInputBox.classList.add('show');
   status.innerText = `Voice failed. Type the ${fieldName} below.`;
-  speakFemale(`Sorry, I didn't catch that. Please type the ${fieldName}.`);
+  speakFemale(responses[detectedUserLang].typeField(fieldName), detectedUserLang);
 }
 
 window.submitManualInput = () => {
@@ -955,40 +1072,40 @@ async function processConversationStep() {
       conversationState.step = 'confirm';
       let confirmText;
       if (conversationState.intent === 'airtime') {
-        confirmText = `Buy ₦${conversationState.amount.toLocaleString()} airtime for ${conversationState.recipient}?`;
+        confirmText = responses[detectedUserLang].confirmAirtime(conversationState.amount, conversationState.recipient);
       } else if (conversationState.currency!== 'NGN') {
         confirmText = `Send ${conversationState.original_amount} ${conversationState.currency}, that's ₦${conversationState.amount.toLocaleString()}, to ${conversationState.recipient}?`;
       } else {
-        confirmText = `Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient}?`;
+        confirmText = responses[detectedUserLang].confirmSend(conversationState.amount, conversationState.recipient);
       }
       status.innerText = confirmText;
-      speakFemale(confirmText);
+      speakFemale(confirmText, detectedUserLang);
       confirmBox.classList.add('show');
     } else {
       if (conversationState.intent === 'airtime') {
         conversationState.step = 'phone';
-        const ask = `First time sending to ${conversationState.recipient}. Please say their phone number.`;
+        const ask = responses[detectedUserLang].firstTimePhone(conversationState.recipient);
         status.innerText = ask;
-        speakFemale(ask);
+        speakFemale(ask, detectedUserLang);
       } else {
         conversationState.step = 'account_number';
-        const ask = `First time sending to ${conversationState.recipient}. Please say the account number.`;
+        const ask = responses[detectedUserLang].firstTimeAcc(conversationState.recipient);
         status.innerText = ask;
-        speakFemale(ask);
+        speakFemale(ask, detectedUserLang);
       }
     }
   } else if (!conversationState.amount && conversationState.recipient) {
     conversationState.step = 'amount';
-    const ask = `How much should I send to ${conversationState.recipient}?`;
+    const ask = responses[detectedUserLang].howMuch(conversationState.recipient);
     status.innerText = ask;
-    speakFemale(ask);
+    speakFemale(ask, detectedUserLang);
   } else if (!conversationState.recipient && conversationState.amount) {
     conversationState.step = 'recipient';
     const ask = conversationState.intent === 'airtime'
-   ? `Buy ₦${conversationState.amount.toLocaleString()} airtime for who?`
-      : `Send ₦${conversationState.amount.toLocaleString()} to who?`;
+  ? responses[detectedUserLang].whoToAirtime(conversationState.amount)
+      : responses[detectedUserLang].whoToSend(conversationState.amount);
     status.innerText = ask;
-    speakFemale(ask);
+    speakFemale(ask, detectedUserLang);
   }
 }
 
@@ -996,6 +1113,9 @@ async function processTranscript(final) {
   status.innerText = `Processing: "${final}"`;
   status.classList.add('active');
   transcriptLive.classList.remove('show');
+  
+  // NEW: Detect language from user speech
+  detectedUserLang = detectLanguage(final);
 
   try {
     let transcriptToSend = final;
@@ -1011,7 +1131,7 @@ async function processTranscript(final) {
         }
       }
     } else if (conversationState.step === 'recipient') {
-      conversationState.recipient = final.replace(/to|for/gi, '').trim();
+      conversationState.recipient = final.replace(/to|for|si|nye|zuwa/gi, '').trim();
       if (conversationState.amount) {
         transcriptToSend = `Send ${conversationState.amount} to ${conversationState.recipient}`;
       }
@@ -1022,9 +1142,9 @@ async function processTranscript(final) {
         account_number: conversationState.account_number,
         type: 'bank'
       });
-      const confirmText = `Saved. Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient}?`;
+      const confirmText = responses[detectedUserLang].saved(conversationState.amount, conversationState.recipient);
       status.innerText = confirmText;
-      speakFemale(confirmText);
+      speakFemale(confirmText, detectedUserLang);
       confirmBox.classList.add('show');
       conversationState.step = 'confirm';
       return;
@@ -1036,9 +1156,9 @@ async function processTranscript(final) {
         bank: conversationState.bank,
         type: 'bank'
       });
-      const confirmText = `Saved. Send ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient} at ${conversationState.bank}?`;
+      const confirmText = responses[detectedUserLang].confirmSend(conversationState.amount, conversationState.recipient);
       status.innerText = confirmText;
-      speakFemale(confirmText);
+      speakFemale(confirmText, detectedUserLang);
       confirmBox.classList.add('show');
       conversationState.step = 'confirm';
       return;
@@ -1049,9 +1169,9 @@ async function processTranscript(final) {
         phone: conversationState.phone,
         type: 'airtime'
       });
-      const confirmText = `Saved. Buy ₦${conversationState.amount.toLocaleString()} airtime for ${conversationState.recipient}?`;
+      const confirmText = responses[detectedUserLang].confirmAirtime(conversationState.amount, conversationState.recipient);
       status.innerText = confirmText;
-      speakFemale(confirmText);
+      speakFemale(confirmText, detectedUserLang);
       confirmBox.classList.add('show');
       conversationState.step = 'confirm';
       return;
@@ -1063,7 +1183,11 @@ async function processTranscript(final) {
     const res = await fetch(BACKEND_URL + '/parse', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({transcript: transcriptToSend, userId: currentUser.uid}),
+      body:JSON.stringify({
+        transcript: transcriptToSend, 
+        userId: currentUser.uid,
+        lang: detectedUserLang // NEW: Send detected language to backend
+      }),
       signal: controller.signal
     });
 
@@ -1079,7 +1203,7 @@ async function processTranscript(final) {
     if (data.original_amount) conversationState.original_amount = data.original_amount;
 
     currentIntent = {
-  ...data,
+ ...data,
       amount: conversationState.amount,
       recipient: conversationState.recipient,
       account_number: savedContacts[conversationState.recipient?.toLowerCase()]?.account_number || null,
@@ -1095,19 +1219,19 @@ async function processTranscript(final) {
       await processConversationStep();
     } else if (!conversationState.amount && conversationState.recipient) {
       conversationState.step = 'amount';
-      const ask = `How much should I send to ${conversationState.recipient}?`;
+      const ask = responses[detectedUserLang].howMuch(conversationState.recipient);
       status.innerText = ask;
-      speakFemale(ask);
+      speakFemale(ask, detectedUserLang);
     } else if (!conversationState.recipient && conversationState.amount) {
       conversationState.step = 'recipient';
       const ask = conversationState.intent === 'airtime'
-     ? `Buy ₦${conversationState.amount.toLocaleString()} airtime for who?`
-        : `Send ₦${conversationState.amount.toLocaleString()} to who?`;
+    ? responses[detectedUserLang].whoToAirtime(conversationState.amount)
+        : responses[detectedUserLang].whoToSend(conversationState.amount);
       status.innerText = ask;
-      speakFemale(ask);
+      speakFemale(ask, detectedUserLang);
     } else {
       status.innerText = data.response;
-      speakFemale(data.response);
+      speakFemale(data.response, detectedUserLang);
     }
   } catch(err) {
     console.error('Fetch error:', err);
@@ -1116,35 +1240,33 @@ async function processTranscript(final) {
       showManualInput();
       demoBtn.classList.add('show');
     } else {
-      status.innerText = 'Did not catch that. Tap mic and speak again.';
-      speakFemale('Sorry, I did not understand. Please speak again clearly.');
+      status.innerText = responses[detectedUserLang].didNotCatch;
+      speakFemale(responses[detectedUserLang].didNotCatch, detectedUserLang);
     }
   }
 }
 
-// NEW: Demo voice for iPhone fallback + judges
 window.runDemoVoice = () => {
   const demoText = "God help me send 50k to Tunde";
   status.innerText = `Demo: "${demoText}"`;
   status.classList.add('active');
   transcriptLive.innerText = demoText;
   transcriptLive.classList.add('show');
-  speakFemale('Playing demo voice for duress mode.');
+  speakFemale('Playing demo voice for duress mode.', detectedUserLang);
   setTimeout(() => processTranscript(demoText), 1500);
 };
 
 mic.onclick = async () => {
-  // Check mic permission first for iOS
   try {
     await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch (e) {
-    status.innerText = 'Mic blocked. Go to Settings → Safari → Microphone → Allow. Or use Demo button below.';
+    status.innerText = responses[detectedUserLang].micBlocked;
     demoBtn.classList.add('show');
     return;
   }
 
   if(!recognition){
-    status.innerText = 'Voice not supported. Use Demo button below.';
+    status.innerText = responses[detectedUserLang].notSupported;
     demoBtn.classList.add('show');
     return;
   }
@@ -1164,11 +1286,10 @@ window.createOpayLink = async () => {
 
   confirmBox.classList.remove('show');
   loadingOpay.classList.add('show');
-  status.innerText = 'Verifying voice and generating Opay link...';
+  status.innerText = responses[detectedUserLang].verifying;
 
   try {
     if (!liveVoiceBlob) {
-      // For demo mode, create fake blob
       liveVoiceBlob = new Blob(['demo'], { type: 'audio/webm' });
     }
 
@@ -1183,7 +1304,7 @@ window.createOpayLink = async () => {
 
     const verifyData = await verifyRes.json();
     if (!verifyData.match && liveVoiceBlob.size > 10) {
-      throw new Error('Voice not recognized. Access denied.');
+      throw new Error(responses[detectedUserLang].voiceFailed);
     }
 
     if (conversationState.duress) {
@@ -1199,8 +1320,8 @@ window.createOpayLink = async () => {
           timestamp: Date.now()
         })
       });
-      speakFemale('Transfer successful!');
-      status.innerText = 'Transfer successful! 🚨 Duress alert sent to Opay';
+      speakFemale(responses[detectedUserLang].duressSuccess, detectedUserLang);
+      status.innerText = responses[detectedUserLang].duressSuccess + ' 🚨 Duress alert sent to Opay';
       await updateDoc(doc(db, 'users', currentUser.uid), {locked: true});
       setTimeout(() => resetMic(), 2000);
       return;
@@ -1225,7 +1346,7 @@ window.createOpayLink = async () => {
     if (data.success || data.data) {
       let opayUrl = data.paymentUrl || data.data?.cashierUrl;
       opayUrl = opayUrl.replace('/HarpsPay/', '/');
-      speakFemale(`Opening Opay. Amount ₦${conversationState.amount.toLocaleString()} to ${conversationState.recipient} is locked. Just enter your PIN.`);
+      speakFemale(responses[detectedUserLang].openingOpay(conversationState.amount, conversationState.recipient), detectedUserLang);
       status.innerText = 'Redirecting to Opay...';
       await addDoc(collection(db, 'transactions'), {
         userId: currentUser.uid,
@@ -1243,13 +1364,13 @@ window.createOpayLink = async () => {
         window.location.href = opayUrl;
       }, 1500);
     } else {
-      throw new Error(data.error || 'Failed to create link');
+      throw new Error(data.error || responses[detectedUserLang].opayFailed);
     }
   } catch (err) {
     console.error('Opay link error:', err);
     loadingOpay.classList.remove('show');
-    status.innerText = err.message || 'Failed to create Opay link. Try again.';
-    speakFemale(err.message || 'Sorry, could not create payment link');
+    status.innerText = err.message || responses[detectedUserLang].opayFailed;
+    speakFemale(err.message || responses[detectedUserLang].opayFailed, detectedUserLang);
   }
 };
 
@@ -1257,7 +1378,7 @@ window.resetMic = () => {
   confirmBox.classList.remove('show');
   loadingOpay.classList.remove('show');
   manualInputBox.classList.remove('show');
-  status.innerText = 'Tap the mic to start';
+  status.innerText = responses[detectedUserLang].tapToStart;
   status.classList.remove('active');
   currentIntent = null;
   voiceFailCount = 0;
@@ -1294,7 +1415,6 @@ window.closeAbout = () => {
   document.getElementById('aboutModal').classList.remove('show');
 };
 
-// USSD Mock Feature
 window.showUSSD = () => {
   const modal = document.createElement('div');
   modal.id = 'ussdModal';
@@ -1306,7 +1426,7 @@ window.showUSSD = () => {
     <button onclick="document.getElementById('ussdModal').remove()" style="position:absolute;top:10px;right:10px;background:#f00;color:#fff;border:none;padding:5px 10px">X</button>
   `;
   document.body.appendChild(modal);
-  speakFemale('USSD mode activated. Say send 5k to Mama.');
+  speakFemale('USSD mode activated. Say send 5k to Mama.', detectedUserLang);
 };
 
 window.startUSSDVoice = () => {
