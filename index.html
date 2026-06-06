@@ -16,6 +16,9 @@
 <meta name="twitter:description" content="Voice-authenticated payments powered by Groq AI">
 <meta name="twitter:image" content="https://harpstech-ng.github.io/IMG_6416.jpeg">
 
+<!-- HARPS EDIT: ADDED CRYPTO-JS FOR AES-256 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#00D084">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -30,10 +33,10 @@
   --green:#00D084;
   --green-glow:rgba(0,208,132,0.3);
   --bg:#0A0A0F;
-  --card:rgba(255,255,0.03);
-  --card-hover:rgba(255,255,0.06);
-  --border:rgba(255,255,0.08);
-  --text-muted:#8A9E;
+  --card:rgba(255,255,255,0.03);
+  --card-hover:rgba(255,255,255,0.06);
+  --border:rgba(255,255,255,0.08);
+  --text-muted:#8A8A9E;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{
@@ -660,6 +663,12 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// HARPS EDIT: AES-256 KEY - NEW
+const AES_KEY = "ebf3d793b82478420df7a12a5c86795224ae7613d9355f1dd2158a3bca47ff80";
+function encrypt(text) {
+  return CryptoJS.AES.encrypt(text.toString(), AES_KEY).toString();
+}
+
 const BACKEND_URL = 'https://harps-voicepay.onrender.com';
 const mic = document.getElementById('mic');
 const status = document.getElementById('status');
@@ -1102,7 +1111,7 @@ async function processConversationStep() {
   } else if (!conversationState.recipient && conversationState.amount) {
     conversationState.step = 'recipient';
     const ask = conversationState.intent === 'airtime'
- ? responses[detectedUserLang].whoToAirtime(conversationState.amount)
+? responses[detectedUserLang].whoToAirtime(conversationState.amount)
       : responses[detectedUserLang].whoToSend(conversationState.amount);
     status.innerText = ask;
     speakFemale(ask, detectedUserLang);
@@ -1225,7 +1234,7 @@ async function processTranscript(final) {
     } else if (!conversationState.recipient && conversationState.amount) {
       conversationState.step = 'recipient';
       const ask = conversationState.intent === 'airtime'
-   ? responses[detectedUserLang].whoToAirtime(conversationState.amount)
+  ? responses[detectedUserLang].whoToAirtime(conversationState.amount)
         : responses[detectedUserLang].whoToSend(conversationState.amount);
       status.innerText = ask;
       speakFemale(ask, detectedUserLang);
@@ -1327,13 +1336,14 @@ window.createOpayLink = async () => {
       return;
     }
 
+    // HARPS EDIT: ENCRYPT sensitive data before sending - NEW
     const res = await fetch(BACKEND_URL + '/create-opay-link', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        amount: conversationState.amount * 100,
-        recipient: conversationState.recipient,
-        account_number: conversationState.account_number,
+        amount: encrypt(conversationState.amount), // ENCRYPTED
+        recipient: encrypt(conversationState.recipient), // ENCRYPTED
+        account_number: conversationState.account_number? encrypt(conversationState.account_number) : null, // ENCRYPTED
         bank: conversationState.bank,
         phone: conversationState.phone,
         intent: conversationState.intent,
