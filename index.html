@@ -606,7 +606,7 @@ h1{
 
   <div class="footer">
     <div class="security">
-      <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+      <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
       Secured by Opay
     </div>
   </div>
@@ -614,7 +614,7 @@ h1{
 
 <!-- ABOUT BUTTON -->
 <button class="about-btn" onclick="showAbout()">
-  <svg fill="currentColor" viewBox="0 0 20 20"><path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 0 100-2zm0 8a1 1 0 100-2 1 0 000 2z"/></svg>
+  <svg fill="currentColor" viewBox="0 0 20 20"><path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"/></svg>
   About VoicePay
 </button>
 
@@ -1234,7 +1234,7 @@ async function processTranscript(final) {
     } else if (!conversationState.recipient && conversationState.amount) {
       conversationState.step = 'recipient';
       const ask = conversationState.intent === 'airtime'
-  ? responses[detectedUserLang].whoToAirtime(conversationState.amount)
+ ? responses[detectedUserLang].whoToAirtime(conversationState.amount)
         : responses[detectedUserLang].whoToSend(conversationState.amount);
       status.innerText = ask;
       speakFemale(ask, detectedUserLang);
@@ -1358,13 +1358,14 @@ window.createOpayLink = async () => {
       opayUrl = opayUrl.replace('/HarpsPay/', '/');
       speakFemale(responses[detectedUserLang].openingOpay(conversationState.amount, conversationState.recipient), detectedUserLang);
       status.innerText = 'Redirecting to Opay...';
+      // HARPS FIX: Save null instead of undefined to Firebase
       await addDoc(collection(db, 'transactions'), {
         userId: currentUser.uid,
         amount: conversationState.amount * 100,
         recipient: conversationState.recipient,
-        account_number: conversationState.account_number,
-        bank: conversationState.bank,
-        phone: conversationState.phone,
+        account_number: conversationState.account_number || null,
+        bank: conversationState.bank || null,
+        phone: conversationState.phone || null,
         intent: conversationState.intent,
         reference: data.reference || data.data?.reference,
         status: 'pending',
