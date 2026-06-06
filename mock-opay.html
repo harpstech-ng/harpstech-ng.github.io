@@ -28,15 +28,15 @@
       padding:20px;
       margin:0;
     }
-  .container{
+ .container{
       width:100%;
       max-width:440px;
     }
-  .security-header{
+ .security-header{
       text-align:center;
       margin-bottom:24px;
     }
-  .opay-logo{
+ .opay-logo{
       width:90px;
       height:90px;
       margin:0 auto 16px;
@@ -52,13 +52,13 @@
       0%,100%{transform:translateY(0)}
       50%{transform:translateY(-8px)}
     }
-  .opay-logo img{
+ .opay-logo img{
       width:60px;
       height:60px;
       border-radius:14px;
       object-fit:cover;
     }
-  .badge{
+ .badge{
       display:inline-flex;
       align-items:center;
       gap:6px;
@@ -72,8 +72,8 @@
       border:1px solid #FFD54F;
       box-shadow:0 4px 12px rgba(255,213,79,0.2);
     }
-  .badge svg{width:14px;height:14px}
-  .card{
+ .badge svg{width:14px;height:14px}
+ .card{
       background:var(--card-bg);
       padding:32px 28px;
       border-radius:24px;
@@ -83,7 +83,7 @@
       position:relative;
       overflow:hidden;
     }
-  .card::before{
+ .card::before{
       content:'';
       position:absolute;
       top:0;
@@ -100,14 +100,14 @@
       text-align:center;
       letter-spacing:-0.5px;
     }
-  .recipient-box{
+ .recipient-box{
       background:linear-gradient(135deg, #F9FAFB, #F3F4F6);
       padding:18px;
       border-radius:16px;
       border:1px solid var(--border);
       margin-bottom:20px;
     }
-  .recipient-label{
+ .recipient-label{
       font-size:12px;
       color:var(--text-muted);
       text-transform:uppercase;
@@ -115,19 +115,19 @@
       font-weight:600;
       margin-bottom:6px;
     }
-  .recipient-name{
+ .recipient-name{
       font-size:18px;
       color:var(--text);
       font-weight:700;
     }
-  .amount-section{
+ .amount-section{
       text-align:center;
       margin:28px 0;
       padding:24px 0;
       border-top:1px solid var(--border);
       border-bottom:1px solid var(--border);
     }
-  .amount-label{
+ .amount-label{
       font-size:13px;
       color:var(--text-muted);
       text-transform:uppercase;
@@ -135,7 +135,7 @@
       font-weight:600;
       margin-bottom:8px;
     }
-  .amount{
+ .amount{
       font-size:48px;
       color:var(--green);
       font-weight:700;
@@ -147,14 +147,14 @@
       0%,100%{transform:scale(1)}
       50%{transform:scale(1.02)}
     }
-  .locked-features{
+ .locked-features{
       background:linear-gradient(135deg, #F0FDF4, #ECFDF5);
       padding:18px;
       border-radius:14px;
       border:1px solid #BBF7D0;
       margin:20px 0;
     }
-  .locked-item{
+ .locked-item{
       display:flex;
       align-items:center;
       gap:10px;
@@ -163,17 +163,17 @@
       font-weight:500;
       margin:10px 0;
     }
-  .locked-item svg{
+ .locked-item svg{
       width:18px;
       height:18px;
       color:var(--green);
       flex-shrink:0;
     }
-  .pin-section{
+ .pin-section{
       margin:24px 0;
       display:none;
     }
-  .pin-section.show{
+ .pin-section.show{
       display:block;
       animation:slide-up 0.4s ease;
     }
@@ -181,20 +181,20 @@
       from{opacity:0;transform:translateY(15px)}
       to{opacity:1;transform:translateY(0)}
     }
-  .pin-label{
+ .pin-label{
       font-size:14px;
       color:var(--text);
       font-weight:600;
       margin-bottom:12px;
       text-align:center;
     }
-  .pin-input{
+ .pin-input{
       display:flex;
       gap:12px;
       justify-content:center;
       margin-bottom:16px;
     }
-  .pin-dot{
+ .pin-dot{
       width:50px;
       height:60px;
       border:2px solid var(--border);
@@ -206,24 +206,24 @@
       background:var(--card-bg);
       transition:all 0.2s ease;
     }
-  .pin-dot:focus{
+ .pin-dot:focus{
       outline:none;
       border-color:var(--green);
       box-shadow:0 0 0 3px rgba(0,184,117,0.1);
     }
-  .pin-dot.filled{
+ .pin-dot.filled{
       border-color:var(--green);
       background:rgba(0,184,117,0.05);
     }
-  .pin-error{
+ .pin-error{
       color:var(--red);
       font-size:13px;
       text-align:center;
       margin-top:8px;
       display:none;
     }
-  .pin-error.show{display:block}
-  .pay-btn{
+ .pin-error.show{display:block}
+ .pay-btn{
       background:linear-gradient(135deg, var(--green), #009D5F);
       color:white;
       border:none;
@@ -242,18 +242,18 @@
       justify-content:center;
       gap:10px;
     }
-  .pay-btn:hover{
+ .pay-btn:hover{
       transform:translateY(-2px);
       box-shadow:0 16px 40px rgba(0,184,117,0.45);
     }
-  .pay-btn:active{transform:scale(0.98)}
-  .pay-btn:disabled{
+ .pay-btn:active{transform:scale(0.98)}
+ .pay-btn:disabled{
       opacity:0.6;
       cursor:not-allowed;
       transform:none;
     }
-  .pay-btn svg{width:20px;height:20px}
-  .security-note{
+ .pay-btn svg{width:20px;height:20px}
+ .security-note{
       text-align:center;
       font-size:11px;
       color:var(--text-muted);
@@ -264,8 +264,8 @@
       justify-content:center;
       gap:6px;
     }
-  .security-note svg{width:14px;height:14px}
-  .voicepay-badge{
+ .security-note svg{width:14px;height:14px}
+ .voicepay-badge{
       text-align:center;
       margin-top:20px;
       padding-top:20px;
@@ -277,27 +277,27 @@
       justify-content:center;
       gap:6px;
     }
-  .voicepay-badge strong{
+ .voicepay-badge strong{
       color:var(--green);
       font-weight:600;
     }
-  .download-section{
+ .download-section{
       margin-top:24px;
       padding-top:24px;
       border-top:1px solid var(--border);
     }
-  .download-title{
+ .download-title{
       font-size:13px;
       color:var(--text-muted);
       text-align:center;
       margin-bottom:12px;
       font-weight:600;
     }
-  .download-btns{
+ .download-btns{
       display:flex;
       gap:12px;
     }
-  .download-btn{
+ .download-btn{
       flex:1;
       padding:12px;
       border-radius:12px;
@@ -313,13 +313,13 @@
       text-decoration:none;
       transition:all 0.2s ease;
     }
-  .download-btn:hover{
+ .download-btn:hover{
       border-color:var(--green);
       background:rgba(0,184,117,0.05);
       transform:translateY(-1px);
     }
-  .download-btn svg{width:18px;height:18px}
-  .success-overlay{
+ .download-btn svg{width:18px;height:18px}
+ .success-overlay{
       position:fixed;
       inset:0;
       background:rgba(0,0,0,0.7);
@@ -329,8 +329,8 @@
       justify-content:center;
       z-index:1000;
     }
-  .success-overlay.show{display:flex}
-  .success-modal{
+ .success-overlay.show{display:flex}
+ .success-modal{
       background:var(--card-bg);
       padding:40px;
       border-radius:24px;
@@ -342,7 +342,7 @@
       from{opacity:0;transform:scale(0.8)}
       to{opacity:1;transform:scale(1)}
     }
-  .success-icon{
+ .success-icon{
       width:80px;
       height:80px;
       background:linear-gradient(135deg, var(--green), #00D084);
@@ -358,18 +358,18 @@
       50%{transform:scale(1.1)}
       100%{transform:scale(1)}
     }
-  .success-icon svg{
+ .success-icon svg{
       width:40px;
       height:40px;
       color:white;
     }
-  .success-title{
+ .success-title{
       font-size:24px;
       font-weight:700;
       color:var(--text);
       margin-bottom:8px;
     }
-  .success-text{
+ .success-text{
       font-size:14px;
       color:var(--text-muted);
       margin-bottom:24px;
@@ -488,12 +488,14 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const p = new URLSearchParams(location.search);
-const amt = parseInt(p.get('amount') || '0');
+// HARPS FIX: Server sends KOBO, convert to Naira for display
+const amtKobo = parseInt(p.get('amount') || '0');
+const amtNaira = amtKobo / 100;
 const name = p.get('name') || 'Recipient';
 const ref = p.get('ref') || 'demo_' + Date.now();
 let currentUser = null;
 
-document.getElementById('amt').textContent = (amt / 100).toLocaleString('en-NG', {
+document.getElementById('amt').textContent = amtNaira.toLocaleString('en-NG', {
   minimumFractionDigits:2,
   maximumFractionDigits:2
 });
@@ -542,7 +544,7 @@ async function speakFemale(text) {
                     availableVoices.find(v => v.name === 'Samantha') ||
                     availableVoices.find(v =>
                       v.name.toLowerCase().includes('female') &&
-                  !MALE_BLACKLIST.some(m => v.name.includes(m))
+                 !MALE_BLACKLIST.some(m => v.name.includes(m))
                     );
 
   if (femaleVoice) {
@@ -580,7 +582,7 @@ window.handlePay = () => {
     document.getElementById('payBtnText').textContent = 'Confirm Payment';
     pinInputs[0].focus();
     pinStep = true;
-    speakFemale('Please enter your Opay PIN to confirm payment.');
+    speakFemale('Please enter your Opay PIN to confirm payment. Use 1234 for demo.');
   } else {
     const pin = Array.from(pinInputs).map(i => i.value).join('');
     if (pin === '1234') {
@@ -609,7 +611,7 @@ async function paySuccess(){
   if (currentUser) {
     addDoc(collection(db, 'transactions'), {
       userId: currentUser.uid,
-      amount: amt,
+      amount: amtKobo, // Store in KOBO for consistency
       recipient: name,
       bank: 'Opay',
       intent: 'transfer',
@@ -622,7 +624,7 @@ async function paySuccess(){
 
   // Save receipt to localStorage immediately
   const receipt = {
-    amount: amt,
+    amount: amtKobo, // Store in KOBO
     recipient: name,
     bank: 'Opay',
     intent: 'transfer',
@@ -634,11 +636,11 @@ async function paySuccess(){
   localStorage.setItem('receipt', JSON.stringify(receipt));
 
   // Show success modal
-  document.getElementById('successAmt').textContent = (amt / 100).toLocaleString('en-NG', {minimumFractionDigits:2});
+  document.getElementById('successAmt').textContent = amtNaira.toLocaleString('en-NG', {minimumFractionDigits:2});
   document.getElementById('successName').textContent = name;
   document.getElementById('successOverlay').classList.add('show');
 
-  speakFemale(`Payment successful. ${amt / 100} Naira sent to ${name}.`);
+  speakFemale(`Payment successful. ${amtNaira} Naira sent to ${name}.`);
 
   // CRITICAL FIX: Guaranteed redirect to dashboard
   setTimeout(() => {
