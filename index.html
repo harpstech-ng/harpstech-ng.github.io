@@ -636,7 +636,7 @@ h1{
           View Pitch Deck
         </a>
         <a href="https://github.com/harpstech-ng" target="_blank" class="pdf-btn">
-          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729 1.205.084 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0.319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729 1.205.084 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0.319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12z"/></svg>
           GitHub
         </a>
       </div>
@@ -694,6 +694,7 @@ let liveVoiceBlob = null;
 let mediaRecorder = null;
 let audioChunks = [];
 let detectedUserLang = 'en-NG'; // NEW: Track user language
+let recognitionTimeout = null; // HARPS FIX: Kill stuck recognition
 
 let conversationState = {
   amount: null,
@@ -868,10 +869,10 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// HARPS FIX: iOS voice loading
+// HARPS FIX: iOS voice loading + Safari freeze fix
 function loadVoicesFast() {
   speechSynthesis.getVoices();
-  if (speechSynthesis.onvoiceschanged !== undefined) {
+  if (speechSynthesis.onvoiceschanged!== undefined) {
     speechSynthesis.onvoiceschanged = () => {
       availableVoices = speechSynthesis.getVoices();
       voicesLoaded = true;
@@ -883,10 +884,11 @@ function loadVoicesFast() {
   }, 100);
 }
 
-// UPDATED: Multi-language speak function with queue fix
+// HARPS FIX: Voice queue kill-switch prevents lag
 function speakFemale(text, lang = 'en-NG') {
   speechSynthesis.cancel();
-  setTimeout(() => {
+  clearTimeout(window.speechTimeout);
+  window.speechTimeout = setTimeout(() => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang;
     if (voicesLoaded && availableVoices.length > 0) {
@@ -943,8 +945,8 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
   recognition.lang = 'en-US';
-  recognition.continuous = false;
-  recognition.interimResults = false;
+  recognition.continuous = true; // HARPS FIX: Keep listening for full sentence
+  recognition.interimResults = true; // HARPS FIX: Show live text
   recognition.maxAlternatives = 1;
 
   recognition.onstart = async () => {
@@ -960,6 +962,15 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
     demoBtn.classList.remove('show');
     speakFemale(responses[detectedUserLang].listening, detectedUserLang);
 
+    // HARPS FIX: Kill stuck mic after 10s
+    clearTimeout(recognitionTimeout);
+    recognitionTimeout = setTimeout(() => {
+      if (isListening) {
+        recognition.stop();
+        showManualInput();
+      }
+    }, 10000);
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder = new MediaRecorder(stream);
@@ -972,6 +983,7 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   };
 
   recognition.onend = () => {
+    clearTimeout(recognitionTimeout);
     isListening = false;
     mic.classList.remove('recording');
 
@@ -987,30 +999,47 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
     } else {
       transcriptLive.classList.remove('show');
       status.innerText = responses[detectedUserLang].tapToStart;
+      // HARPS FIX: Force manual after 3 silent fails
+      voiceFailCount++;
+      if (voiceFailCount >= 3) showManualInput();
     }
   };
 
   recognition.onresult = (e) => {
-    const transcript = e.results[0][0].transcript;
-    const confidence = e.results[0][0].confidence;
-    transcriptLive.innerText = transcript;
-    finalTranscriptBuffer = transcript;
-    confidenceBar.classList.add('show');
-    confidenceFill.style.width = (confidence * 100) + '%';
-    if (confidence < 0.5) {
-      voiceFailCount++;
-      if (voiceFailCount >= 2) showManualInput();
-    } else {
-      voiceFailCount = 0;
+    let interimTranscript = '';
+    let finalTranscript = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const transcript = e.results[i][0].transcript;
+      if (e.results[i].isFinal) {
+        finalTranscript += transcript;
+      } else {
+        interimTranscript += transcript;
+      }
+    }
+    transcriptLive.innerText = finalTranscript || interimTranscript;
+    if (finalTranscript) {
+      finalTranscriptBuffer = finalTranscript;
+      const confidence = e.results[e.results.length-1][0].confidence;
+      confidenceBar.classList.add('show');
+      confidenceFill.style.width = (confidence * 100) + '%';
+      if (confidence < 0.5) {
+        voiceFailCount++;
+        if (voiceFailCount >= 2) showManualInput();
+      } else {
+        voiceFailCount = 0;
+      }
     }
   };
 
   recognition.onerror = (e) => {
+    clearTimeout(recognitionTimeout);
     isListening = false;
     mic.classList.remove('recording');
     transcriptLive.classList.remove('show');
     if (e.error === 'no-speech') {
       status.innerText = responses[detectedUserLang].noSpeech;
+      voiceFailCount++;
+      if (voiceFailCount >= 3) showManualInput();
     } else if (e.error === 'not-allowed') {
       status.innerText = responses[detectedUserLang].micBlocked;
       demoBtn.classList.add('show');
@@ -1029,28 +1058,27 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
 function showManualInput() {
   let fieldName = 'details';
   let placeholder = 'Type here...';
-  if (conversationState.step === 'amount') {
+  if (conversationState.step === 'amount' ||!conversationState.amount) {
     fieldName = 'amount';
     placeholder = 'Enter amount (e.g. 5000)';
     manualInputTitle.innerText = 'Enter Amount';
-  } else if (conversationState.step === 'recipient') {
+    conversationState.manualField = 'amount';
+  } else if (conversationState.step === 'recipient' ||!conversationState.recipient) {
     fieldName = 'recipient name';
     placeholder = 'Enter name (e.g. Seyi)';
     manualInputTitle.innerText = 'Enter Recipient Name';
+    conversationState.manualField = 'recipient';
   } else if (conversationState.step === 'account_number') {
     fieldName = 'account number';
     placeholder = 'Enter 10-digit account number';
     manualInputTitle.innerText = 'Enter Account Number';
-  } else if (conversationState.step === 'bank') {
-    fieldName = 'bank name';
-    placeholder = 'Enter bank (e.g. GTBank)';
-    manualInputTitle.innerText = 'Enter Bank Name';
+    conversationState.manualField = 'account_number';
   } else if (conversationState.step === 'phone') {
     fieldName = 'phone number';
     placeholder = 'Enter phone number';
     manualInputTitle.innerText = 'Enter Phone Number';
+    conversationState.manualField = 'phone';
   }
-  conversationState.manualField = conversationState.step;
   manualInput.placeholder = placeholder;
   manualInput.value = '';
   manualInputBox.classList.add('show');
@@ -1062,14 +1090,13 @@ window.submitManualInput = () => {
   const value = manualInput.value.trim();
   if (!value) return;
   manualInputBox.classList.remove('show');
+  voiceFailCount = 0;
   if (conversationState.manualField === 'amount') {
     conversationState.amount = parseInt(value.replace(/\D/g,''));
   } else if (conversationState.manualField === 'recipient') {
     conversationState.recipient = value;
   } else if (conversationState.manualField === 'account_number') {
     conversationState.account_number = value.replace(/\D/g,'');
-  } else if (conversationState.manualField === 'bank') {
-    conversationState.bank = value;
   } else if (conversationState.manualField === 'phone') {
     conversationState.phone = value.replace(/\D/g,'');
   }
@@ -1162,20 +1189,6 @@ async function processTranscript(final) {
       confirmBox.classList.add('show');
       conversationState.step = 'confirm';
       return;
-    } else if (conversationState.step === 'bank') {
-      conversationState.bank = final;
-      await saveContactToFirebase({
-        name: conversationState.recipient,
-        account_number: conversationState.account_number,
-        bank: conversationState.bank,
-        type: 'bank'
-      });
-      const confirmText = responses[detectedUserLang].confirmSend(conversationState.amount, conversationState.recipient);
-      status.innerText = confirmText;
-      speakFemale(confirmText, detectedUserLang);
-      confirmBox.classList.add('show');
-      conversationState.step = 'confirm';
-      return;
     } else if (conversationState.step === 'phone') {
       conversationState.phone = final.replace(/\D/g,'');
       await saveContactToFirebase({
@@ -1239,7 +1252,7 @@ async function processTranscript(final) {
     } else if (!conversationState.recipient && conversationState.amount) {
       conversationState.step = 'recipient';
       const ask = conversationState.intent === 'airtime'
- ? responses[detectedUserLang].whoToAirtime(conversationState.amount)
+? responses[detectedUserLang].whoToAirtime(conversationState.amount)
         : responses[detectedUserLang].whoToSend(conversationState.amount);
       status.innerText = ask;
       speakFemale(ask, detectedUserLang);
@@ -1362,6 +1375,7 @@ window.createOpayLink = async () => {
       opayUrl = opayUrl.replace('/HarpsPay/', '/');
       speakFemale(responses[detectedUserLang].openingOpay(conversationState.amount, conversationState.recipient), detectedUserLang);
       status.innerText = 'Redirecting to Opay...';
+      // HARPS FIX: Firebase null fix + Kobo conversion
       await addDoc(collection(db, 'transactions'), {
         userId: currentUser.uid,
         amount: conversationState.amount * 100,
@@ -1370,14 +1384,15 @@ window.createOpayLink = async () => {
         bank: conversationState.bank || null,
         phone: conversationState.phone || null,
         intent: conversationState.intent,
-        reference: data.reference || data.data?.reference,
+        reference: data.reference || data.data?.reference || 'demo-' + Date.now(),
         status: 'pending',
         createdAt: serverTimestamp()
       });
-      // HARPS FIX: Convert Naira to Kobo for mock-opay.html
+      // HARPS FIX: Convert Naira to Kobo + fallback reference
       setTimeout(() => {
         const amountInKobo = conversationState.amount * 100;
-        window.location.href = `./mock-opay.html?amount=${amountInKobo}&recipient=${encodeURIComponent(conversationState.recipient)}&ref=${data.reference || data.data?.reference}`;
+        const ref = data.reference || data.data?.reference || 'demo-' + Date.now();
+        window.location.href = `./mock-opay.html?amount=${amountInKobo}&recipient=${encodeURIComponent(conversationState.recipient)}&ref=${ref}`;
       }, 1500);
     } else {
       throw new Error(data.error || responses[detectedUserLang].opayFailed);
@@ -1387,6 +1402,8 @@ window.createOpayLink = async () => {
     loadingOpay.classList.remove('show');
     status.innerText = err.message || responses[detectedUserLang].opayFailed;
     speakFemale(err.message || responses[detectedUserLang].opayFailed, detectedUserLang);
+    // HARPS FIX: Show manual input if Opay fails
+    setTimeout(() => showManualInput(), 2000);
   }
 };
 
