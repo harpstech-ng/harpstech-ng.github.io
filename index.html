@@ -868,36 +868,42 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
+// HARPS FIX: iOS voice loading
 function loadVoicesFast() {
   speechSynthesis.getVoices();
+  if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = () => {
+      availableVoices = speechSynthesis.getVoices();
+      voicesLoaded = true;
+    };
+  }
   setTimeout(() => {
     availableVoices = speechSynthesis.getVoices();
     voicesLoaded = true;
   }, 100);
 }
 
-// UPDATED: Multi-language speak function
+// UPDATED: Multi-language speak function with queue fix
 function speakFemale(text, lang = 'en-NG') {
   speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = lang;
-
-  if (voicesLoaded && availableVoices.length > 0) {
-    // Try to find voice for specific language
-    let voice = availableVoices.find(v => v.lang === lang);
-    if (!voice) {
-      // Fallback to English female voice
-      voice = availableVoices.find(v => v.name === 'Google UK English Female') ||
-              availableVoices.find(v => v.name === 'Samantha') ||
-              availableVoices.find(v =>!['Google US English', 'David', 'Male'].some(m => v.name.includes(m)));
+  setTimeout(() => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    if (voicesLoaded && availableVoices.length > 0) {
+      let voice = availableVoices.find(v => v.lang === lang);
+      if (!voice) {
+        voice = availableVoices.find(v => v.name === 'Google UK English Female') ||
+                availableVoices.find(v => v.name === 'Samantha') ||
+                availableVoices.find(v =>!['Google US English', 'David', 'Male'].some(m => v.name.includes(m)));
+      }
+      if (voice) {
+        utterance.voice = voice;
+        utterance.pitch = 1.3;
+        utterance.rate = 0.9;
+      }
     }
-    if (voice) {
-      utterance.voice = voice;
-      utterance.pitch = 1.3;
-      utterance.rate = 0.9;
-    }
-  }
-  speechSynthesis.speak(utterance);
+    speechSynthesis.speak(utterance);
+  }, 50);
 }
 
 async function getLocation() {
@@ -936,7 +942,7 @@ let finalTranscriptBuffer = '';
 if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
-  recognition.lang = 'en-US'; // Keep English for detection, but we'll handle multi-lang
+  recognition.lang = 'en-US';
   recognition.continuous = false;
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
@@ -1123,7 +1129,6 @@ async function processTranscript(final) {
   status.classList.add('active');
   transcriptLive.classList.remove('show');
 
-  // NEW: Detect language from user speech
   detectedUserLang = detectLanguage(final);
 
   try {
@@ -1195,7 +1200,7 @@ async function processTranscript(final) {
       body:JSON.stringify({
         transcript: transcriptToSend,
         userId: currentUser.uid,
-        lang: detectedUserLang // NEW: Send detected language to backend
+        lang: detectedUserLang
       }),
       signal: controller.signal
     });
@@ -1336,14 +1341,13 @@ window.createOpayLink = async () => {
       return;
     }
 
-    // HARPS EDIT: ENCRYPT sensitive data before sending - NEW
     const res = await fetch(BACKEND_URL + '/create-opay-link', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        amount: encrypt(conversationState.amount), // ENCRYPTED
-        recipient: encrypt(conversationState.recipient), // ENCRYPTED
-        account_number: conversationState.account_number? encrypt(conversationState.account_number) : null, // ENCRYPTED
+        amount: encrypt(conversationState.amount),
+        recipient: encrypt(conversationState.recipient),
+        account_number: conversationState.account_number? encrypt(conversationState.account_number) : null,
         bank: conversationState.bank,
         phone: conversationState.phone,
         intent: conversationState.intent,
@@ -1358,7 +1362,6 @@ window.createOpayLink = async () => {
       opayUrl = opayUrl.replace('/HarpsPay/', '/');
       speakFemale(responses[detectedUserLang].openingOpay(conversationState.amount, conversationState.recipient), detectedUserLang);
       status.innerText = 'Redirecting to Opay...';
-      // HARPS FIX: Save null instead of undefined to Firebase
       await addDoc(collection(db, 'transactions'), {
         userId: currentUser.uid,
         amount: conversationState.amount * 100,
@@ -1371,9 +1374,10 @@ window.createOpayLink = async () => {
         status: 'pending',
         createdAt: serverTimestamp()
       });
-      // UPDATED: Go to mock-opay.html instead of real Opay for hackathon demo
+      // HARPS FIX: Convert Naira to Kobo for mock-opay.html
       setTimeout(() => {
-        window.location.href = `./mock-opay.html?amount=${conversationState.amount}&recipient=${encodeURIComponent(conversationState.recipient)}&ref=${data.reference || data.data?.reference}`;
+        const amountInKobo = conversationState.amount * 100;
+        window.location.href = `./mock-opay.html?amount=${amountInKobo}&recipient=${encodeURIComponent(conversationState.recipient)}&ref=${data.reference || data.data?.reference}`;
       }, 1500);
     } else {
       throw new Error(data.error || responses[detectedUserLang].opayFailed);
