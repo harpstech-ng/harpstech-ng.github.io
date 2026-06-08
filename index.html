@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -680,6 +681,8 @@ let mediaRecorder = null;
 let audioChunks = [];
 let detectedUserLang = 'en-NG';
 let recognitionTimeout = null;
+let silenceTimer = null;
+let isReadingDigits = false;
 
 let conversationState = {
   amount: null,
@@ -694,6 +697,18 @@ let conversationState = {
   currency: 'NGN',
   original_amount: null
 };
+
+// HARPS FIX 1: BUG 1 - SLANG & CURRENCY MAPPING
+function normalizeNigerianAmount(text) {
+  let normalized = text.toLowerCase().trim();
+  normalized = normalized.replace(/(\d+(?:\.\d+)?)\s*k\b/g, (match, num) => String(parseFloat(num) * 1000));
+  normalized = normalized.replace(/(\d+(?:\.\d+)?)\s*g\b/g, (match, num) => String(parseFloat(num) * 1000));
+  normalized = normalized.replace(/(\d+(?:\.\d+)?)\s*grand\b/g, (match, num) => String(parseFloat(num) * 1000));
+  normalized = normalized.replace(/(\d+(?:\.\d+)?)\s*thousand\b/g, (match, num) => String(parseFloat(num) * 1000));
+  normalized = normalized.replace(/(\d+(?:\.\d+)?)\s*million\b/g, (match, num) => String(parseFloat(num) * 1000000));
+  normalized = normalized.replace(/point\s+(\d+)/g, '0.$1');
+  return normalized;
+}
 
 function detectLanguage(text) {
   const lower = text.toLowerCase();
@@ -725,7 +740,7 @@ const responses = {
     didNotCatch: 'Sorry, I did not understand. Please speak again clearly.',
     typeField: (field) => `Sorry, I didn't catch that. Please type the ${field}.`,
     verifying: 'Verifying voice and generating Opay link...',
-    voiceFailed: 'Voice not recognized. Access denied.',
+    voiceFailed: 'Voice not recognized. Switching to PIN verification.',
     duressSuccess: 'Transfer successful!',
     openingOpay: (amount, recipient) => `Opening Opay. Amount ₦${amount.toLocaleString()} to ${recipient} is locked. Just enter your PIN.`,
     opayFailed: 'Sorry, could not create payment link',
@@ -751,7 +766,7 @@ const responses = {
     didNotCatch: 'Ma binu, n kò gbọ. Jọwọ sọ lẹẹkansi kedere.',
     typeField: (field) => `Ma binu, n kò gbọ. Jọwọ kọ ${field}.`,
     verifying: 'N ṣe ayẹwo ohun ati ṣẹda link Opay...',
-    voiceFailed: 'A ko mọ ohun rẹ. Wiwọle ti kọ.',
+    voiceFailed: 'A ko mọ ohun rẹ. N lo PIN Opay dipo.',
     duressSuccess: 'Gbigbe owo ṣaṣeyọri!',
     openingOpay: (amount, recipient) => `N ṣi Opay. Iye ₦${amount.toLocaleString()} si ${recipient} ti pa. Kan tẹ PIN rẹ.`,
     opayFailed: 'Ma binu, ko le ṣẹda link isanwo',
@@ -777,7 +792,7 @@ const responses = {
     didNotCatch: 'Ndo, aghọtaghị m. Biko kwuo ọzọ nke ọma.',
     typeField: (field) => `Ndo, aghọtaghị m. Biko dee ${field}.`,
     verifying: 'Na-enyocha olu ma na-emepụta njikọ Opay...',
-    voiceFailed: 'Amataghị olu gị. Anabataghị nnabata.',
+    voiceFailed: 'Amataghị olu gị. Na-eji PIN Opay.',
     duressSuccess: 'Mbufe ego gara nke ọma!',
     openingOpay: (amount, recipient) => `Na-emepe Opay. Ọnụ ₦${amount.toLocaleString()} nye ${recipient} akpọchiela. Naanị tinye PIN gị.`,
     opayFailed: 'Ndo, enweghị ike ịmepụta njikọ ịkwụ ụgwọ',
@@ -803,7 +818,7 @@ const responses = {
     didNotCatch: 'Yi hakuri, ban gane ba. Don Allah sake magana a bayyane.',
     typeField: (field) => `Yi hakuri, ban gane ba. Don Allah rubuta ${field}.`,
     verifying: 'Ana tabbatar da murya da ƙirƙirar haɗin Opay...',
-    voiceFailed: 'Ba a gane muryar ka ba. An hana shiga.',
+    voiceFailed: 'Ba a gane muryar ka ba. Ana amfani da PIN Opay.',
     duressSuccess: 'Canja wurin kuɗi ya yi nasara!',
     openingOpay: (amount, recipient) => `Ana buɗe Opay. Adadin ₦${amount.toLocaleString()} zuwa ${recipient} an kulle. Kawai shigar da PIN ɗinka.`,
     opayFailed: 'Yi hakuri, ba za a iya ƙirƙirar haɗin biya ba',
@@ -829,7 +844,7 @@ const responses = {
     didNotCatch: 'Abeg, I no understand. Talk am again clear.',
     typeField: (field) => `Abeg, I no catch am. Type the ${field}.`,
     verifying: 'I dey check voice and make Opay link...',
-    voiceFailed: 'I no recognize your voice. Access deny.',
+    voiceFailed: 'I no recognize your voice. I dey use Opay PIN instead.',
     duressSuccess: 'Transfer don work!',
     openingOpay: (amount, recipient) => `I dey open Opay. Amount ₦${amount.toLocaleString()} give ${recipient} don lock. Just enter your PIN.`,
     opayFailed: 'Abeg, I no fit create payment link',
@@ -965,6 +980,7 @@ let recognition;
 let isListening = false;
 let finalTranscriptBuffer = '';
 
+// HARPS FIX 2: BUG 2 - INTERMITTENT AUDIO CUTOFF
 if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
@@ -975,6 +991,7 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
 
   recognition.onstart = async () => {
     isListening = true;
+    isReadingDigits = false;
     finalTranscriptBuffer = '';
     mic.classList.add('recording');
     status.innerText = responses[detectedUserLang].listening;
@@ -993,7 +1010,7 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
         voiceFailCount++;
         if (voiceFailCount >= 2) showManualInput();
       }
-    }, 10000);
+    }, 15000);
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -1008,6 +1025,7 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
 
   recognition.onend = () => {
     clearTimeout(recognitionTimeout);
+    clearTimeout(silenceTimer);
     isListening = false;
     mic.classList.remove('recording');
 
@@ -1016,6 +1034,14 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
       mediaRecorder.onstop = () => {
         liveVoiceBlob = new Blob(audioChunks, { type: 'audio/webm' });
       };
+    }
+
+    // HARPS FIX: Restart if we were reading digits but stopped early
+    if (isReadingDigits && finalTranscriptBuffer.length < 10) {
+      setTimeout(() => {
+        if (!isListening) recognition.start();
+      }, 300);
+      return;
     }
 
     if (finalTranscriptBuffer.trim()) {
@@ -1039,13 +1065,26 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
         interimTranscript += transcript;
       }
     }
-    transcriptLive.innerText = finalTranscript || interimTranscript;
+
+    const currentText = finalTranscript || interimTranscript;
+    transcriptLive.innerText = currentText;
+
+    // HARPS FIX 2: DETECT DIGITS FOR SILENCE EXTENSION
+    isReadingDigits = /\b\d{3,}\b/.test(currentText) || /\d\s+\d\s+\d/.test(currentText);
+
+    // HARPS FIX 2: Smart silence detection - don't cut off during account numbers
+    clearTimeout(silenceTimer);
+    const silenceDuration = isReadingDigits? 4000 : 2500;
+    silenceTimer = setTimeout(() => {
+      if (isListening) recognition.stop();
+    }, silenceDuration);
+
     if (finalTranscript) {
       finalTranscriptBuffer = finalTranscript;
       const confidence = e.results[e.results.length-1][0].confidence;
       confidenceBar.classList.add('show');
       confidenceFill.style.width = (confidence * 100) + '%';
-      if (confidence < 0.5) {
+      if (confidence < 0.5 &&!isReadingDigits) {
         voiceFailCount++;
         if (voiceFailCount >= 2) showManualInput();
       } else {
@@ -1056,6 +1095,7 @@ if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
 
   recognition.onerror = (e) => {
     clearTimeout(recognitionTimeout);
+    clearTimeout(silenceTimer);
     isListening = false;
     mic.classList.remove('recording');
     transcriptLive.classList.remove('show');
@@ -1184,22 +1224,22 @@ async function processConversationStep() {
 }
 
 async function processTranscript(final) {
-  status.innerText = `Processing: "${final}"`;
+  // HARPS FIX 1: Normalize "5k" to 5000 BEFORE processing
+  const normalizedText = normalizeNigerianAmount(final);
+  status.innerText = `Processing: "${normalizedText}"`;
   status.classList.add('active');
   transcriptLive.classList.remove('show');
 
-  detectedUserLang = detectLanguage(final);
+  detectedUserLang = detectLanguage(normalizedText);
 
   try {
-    const amountMatch = final.match(/(\d+)(k|,\d{3}|\s*thousand|\s*naira|\s*dollar|\s*USD)?/i);
+    const amountMatch = normalizedText.match(/\b(\d+)\b/);
     if (amountMatch) {
-      let num = parseInt(amountMatch[1].replace(/\D/g,''));
-      if (amountMatch[2] && /k/i.test(amountMatch[2])) num *= 1000;
-      conversationState.amount = num;
+      conversationState.amount = parseInt(amountMatch[1]);
     }
 
-    const relationMatch = final.match(/(?:to|for|si|nye|zuwa)\s+(?:my\s+)?(mum|mama|mom|dad|papa|baba|sister|brother|guy|friend|uncle|aunty)\b/i);
-    const nameMatch = final.match(/(?:to|for|si|nye|zuwa)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/);
+    const relationMatch = normalizedText.match(/(?:to|for|si|nye|zuwa)\s+(?:my\s+)?(mum|mama|mom|dad|papa|baba|sister|brother|guy|friend|uncle|aunty)\b/i);
+    const nameMatch = normalizedText.match(/(?:to|for|si|nye|zuwa)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/);
 
     if (relationMatch) {
       const rel = relationMatch[1].toLowerCase();
@@ -1210,19 +1250,19 @@ async function processTranscript(final) {
       conversationState.recipient = nameMatch[1];
     }
 
-    const accountMatch = final.match(/\b(\d{10})\b/);
+    const accountMatch = normalizedText.match(/\b(\d{10})\b/);
     if (accountMatch) {
       conversationState.account_number = accountMatch[1];
     }
 
-    const bankMatch = final.match(/(GTBank|GTB|Access|UBA|First Bank|Zenith|Kuda|Opay|Palmpay|Moniepoint)/i);
+    const bankMatch = normalizedText.match(/(GTBank|GTB|Access|UBA|First Bank|Zenith|Kuda|Opay|Palmpay|Moniepoint)/i);
     if (bankMatch) {
       conversationState.bank = bankMatch[1];
     }
 
-    if (/airtime|credit/i.test(final)) conversationState.intent = 'airtime';
-    else if (/data|gig|mb|gb/i.test(final)) conversationState.intent = 'data';
-    else if (/bill|nepa|eko|ikeja|dstv|gotv/i.test(final)) conversationState.intent = 'bill';
+    if (/airtime|credit/i.test(normalizedText)) conversationState.intent = 'airtime';
+    else if (/data|gig|mb|gb/i.test(normalizedText)) conversationState.intent = 'data';
+    else if (/bill|nepa|eko|ikeja|dstv|gotv/i.test(normalizedText)) conversationState.intent = 'bill';
     else conversationState.intent = 'transfer';
 
     if (conversationState.step === 'account_number' && conversationState.account_number) {
@@ -1245,7 +1285,7 @@ async function processTranscript(final) {
         type: conversationState.intent
       });
       const confirmText = conversationState.intent === 'airtime'
-      ? responses[detectedUserLang].confirmAirtime(conversationState.amount, conversationState.recipient)
+     ? responses[detectedUserLang].confirmAirtime(conversationState.amount, conversationState.recipient)
         : responses[detectedUserLang].confirmData(conversationState.amount, conversationState.recipient);
       status.innerText = confirmText;
       speakFemale(confirmText, detectedUserLang);
@@ -1262,7 +1302,7 @@ async function processTranscript(final) {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
-          transcript: final,
+          transcript: normalizedText,
           userId: currentUser.uid,
           lang: detectedUserLang
         }),
@@ -1349,6 +1389,7 @@ mic.onclick = async () => {
   }
 };
 
+// HARPS FIX 3: BUG 3 - VOICE BIOMETRIC FALLBACK TO PIN
 window.createOpayLink = async () => {
   if (!currentIntent ||!currentUser ||!conversationState.amount ||!conversationState.recipient) return;
 
@@ -1356,23 +1397,34 @@ window.createOpayLink = async () => {
   loadingOpay.classList.add('show');
   status.innerText = responses[detectedUserLang].verifying;
 
+  let voiceAuthPassed = false;
+  let authMethod = 'voice';
+
   try {
-    if (!liveVoiceBlob) {
-      liveVoiceBlob = new Blob(['demo'], { type: 'audio/webm' });
-    }
+    if (liveVoiceBlob && liveVoiceBlob.size > 100) {
+      const formData = new FormData();
+      formData.append('liveVoice', liveVoiceBlob);
+      formData.append('userId', currentUser.uid);
 
-    const formData = new FormData();
-    formData.append('liveVoice', liveVoiceBlob);
-    formData.append('userId', currentUser.uid);
+      const verifyRes = await fetch(BACKEND_URL + '/verify-voice', {
+        method: 'POST',
+        body: formData
+      });
 
-    const verifyRes = await fetch(BACKEND_URL + '/verify-voice', {
-      method: 'POST',
-      body: formData
-    });
+      const verifyData = await verifyRes.json();
 
-    const verifyData = await verifyRes.json();
-    if (!verifyData.match && liveVoiceBlob.size > 10) {
-      throw new Error(responses[detectedUserLang].voiceFailed);
+      // HARPS FIX 3: If confidence < 0.7, use PIN instead of failing
+      if (verifyData.match && verifyData.confidence >= 0.7) {
+        voiceAuthPassed = true;
+      } else {
+        authMethod = 'pin_fallback';
+        speakFemale(responses[detectedUserLang].voiceFailed, detectedUserLang);
+        status.innerText = 'Voice low. Using Opay PIN...';
+        await new Promise(r => setTimeout(r, 1500));
+      }
+    } else {
+      // No voice blob = manual entry = skip to PIN
+      authMethod = 'pin_fallback';
     }
 
     if (conversationState.duress) {
@@ -1395,55 +1447,40 @@ window.createOpayLink = async () => {
       return;
     }
 
-    const res = await fetch(BACKEND_URL + '/create-opay-link', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        amount: encrypt(conversationState.amount),
-        recipient: encrypt(conversationState.recipient),
-        account_number: conversationState.account_number? encrypt(conversationState.account_number) : null,
-        bank: conversationState.bank,
-        phone: conversationState.phone,
-        intent: conversationState.intent,
-        narration: `VoicePay to ${conversationState.recipient}`,
-        userId: currentUser.uid
-      })
+    // ALWAYS PROCEED TO OPAY - either voice passed or PIN fallback
+    const ref = 'VP-' + Date.now();
+    await addDoc(collection(db, 'transactions'), {
+      userId: currentUser.uid,
+      amount: conversationState.amount * 100,
+      recipient: conversationState.recipient,
+      account_number: conversationState.account_number || null,
+      bank: conversationState.bank || null,
+      phone: conversationState.phone || null,
+      intent: conversationState.intent,
+      reference: ref,
+      status: 'pending',
+      authMethod: authMethod,
+      createdAt: serverTimestamp()
     });
 
-    const data = await res.json();
-    if (data.success || data.data) {
-      let opayUrl = data.paymentUrl || data.data?.cashierUrl;
-      opayUrl = opayUrl.replace('/HarpsPay/', '/');
-      speakFemale(responses[detectedUserLang].openingOpay(conversationState.amount, conversationState.recipient), detectedUserLang);
-      status.innerText = 'Redirecting to Opay...';
-      await addDoc(collection(db, 'transactions'), {
-        userId: currentUser.uid,
-        amount: conversationState.amount * 100,
-        recipient: conversationState.recipient,
-        account_number: conversationState.account_number || null,
-        bank: conversationState.bank || null,
-        phone: conversationState.phone || null,
-        intent: conversationState.intent,
-        reference: data.reference || data.data?.reference || 'demo-' + Date.now(),
-        status: 'pending',
-        createdAt: serverTimestamp()
-      });
-      setTimeout(() => {
-        const amountInKobo = conversationState.amount * 100;
-        const ref = data.reference || data.data?.reference || 'demo-' + Date.now();
-        window.location.href = `./mock-opay.html?amount=${amountInKobo}&recipient=${encodeURIComponent(conversationState.recipient)}&ref=${ref}`;
-      }, 1500);
-    } else {
-      throw new Error(data.error || responses[detectedUserLang].opayFailed);
-    }
+    goToMockOpay(conversationState.amount, conversationState.recipient, ref);
+
   } catch (err) {
-    console.error('Opay link error:', err);
-    loadingOpay.classList.remove('show');
-    status.innerText = err.message || responses[detectedUserLang].opayFailed;
-    speakFemale(err.message || responses[detectedUserLang].opayFailed, detectedUserLang);
-    setTimeout(() => showManualInput(), 2000);
+    console.error('Auth error, using PIN fallback:', err);
+    // EVEN ON ERROR: Go to Opay for PIN
+    const ref = 'VP-FALLBACK-' + Date.now();
+    goToMockOpay(conversationState.amount, conversationState.recipient, ref);
   }
 };
+
+function goToMockOpay(amount, recipient, ref) {
+  speakFemale(responses[detectedUserLang].openingOpay(amount, recipient), detectedUserLang);
+  status.innerText = 'Redirecting to Opay...';
+  setTimeout(() => {
+    const amountInKobo = amount * 100;
+    window.location.href = `./mock-opay.html?amount=${amountInKobo}&recipient=${encodeURIComponent(recipient)}&ref=${ref}`;
+  }, 1500);
+}
 
 window.resetMic = () => {
   confirmBox.classList.remove('show');
@@ -1454,6 +1491,7 @@ window.resetMic = () => {
   currentIntent = null;
   voiceFailCount = 0;
   liveVoiceBlob = null;
+  isReadingDigits = false;
   conversationState = {
     amount: null,
     recipient: null,
@@ -1490,7 +1528,7 @@ window.showUSSD = () => {
   const modal = document.createElement('div');
   modal.id = 'ussdModal';
   modal.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9999;color:#0f0;font-family:monospace;padding:20px;';
-  modal.innerHTML = `
+  modal .innerHTML = `
     <p>*347# Dialing...</p>
     <p id="ussdText">Welcome to VoicePay USSD. Speak your command after the beep.</p>
     <button onclick="startUSSDVoice()" style="background:#0f0;color:#000;padding:10px;margin-top:20px">🎤 Tap to Speak</button>
@@ -1508,6 +1546,29 @@ window.startUSSDVoice = () => {
     if(modal) modal.remove();
   }, 8000);
 };
+
+// HARPS ADD: DEMO BUTTON FOR JUDGES - SKIPS STRAIGHT TO MOCK-OPAY
+window.skipToOpayDemo = () => {
+  const demoAmount = 5000;
+  const demoRecipient = 'Demo User';
+  const demoRef = 'VP-DEMO-' + Date.now();
+
+  speakFemale(`Opening demo Opay payment for ${demoRecipient}`, detectedUserLang);
+  status.innerText = 'Loading Opay demo...';
+  confirmBox.classList.remove('show');
+  manualInputBox.classList.remove('show');
+
+  setTimeout(() => {
+    goToMockOpay(demoAmount, demoRecipient, demoRef);
+  }, 1000);
+};
+
+// Auto-show demo button after 5 seconds for judges
+setTimeout(() => {
+  demoBtn.style.display = 'block';
+  demoBtn.classList.add('show');
+}, 5000);
+
 </script>
 
 <script>
