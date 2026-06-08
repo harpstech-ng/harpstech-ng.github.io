@@ -697,10 +697,10 @@ let conversationState = {
 
 function detectLanguage(text) {
   const lower = text.toLowerCase();
-  if (/bawo|owo|se jowo|jowo|ekaro|ekasan|ranse|kinni/.test(lower)) return 'yo-NG';
-  if (/kedu|ego|biko|ndewo|daalu|iziga/.test(lower)) return 'ig-NG';
-  if (/sannu|kudi|yaya|ina|barka|aika/.test(lower)) return 'ha-NG';
-  if (/abeg|wey|dey|na|make|how far/.test(lower)) return 'en-NG';
+  if (/bawo|owo|se jowo|jowo|ekaro|ekasan|ranse|kinni|owo|naira/.test(lower)) return 'yo-NG';
+  if (/kedu|ego|biko|ndewo|daalu|iziga|naira/.test(lower)) return 'ig-NG';
+  if (/sannu|kudi|yaya|ina|barka|aika|naira/.test(lower)) return 'ha-NG';
+  if (/abeg|wey|dey|na|make|how far|comot|sha/.test(lower)) return 'pcm-NG';
   return 'en-NG';
 }
 
@@ -808,6 +808,32 @@ const responses = {
     openingOpay: (amount, recipient) => `Ana buɗe Opay. Adadin ₦${amount.toLocaleString()} zuwa ${recipient} an kulle. Kawai shigar da PIN ɗinka.`,
     opayFailed: 'Yi hakuri, ba za a iya ƙirƙirar haɗin biya ba',
     tapToStart: 'Danna mic don farawa'
+  },
+  'pcm-NG': {
+    listening: 'I dey hear you.',
+    hello: (name) => `How far ${name}. Tap microphone make you tell me wetin you wan do.`,
+    noSpeech: 'I no hear anything. Tap mic again.',
+    micBlocked: 'Dem block mic. Go Settings → Safari → Microphone',
+    micError: 'Voice no dey work here. Type am.',
+    notSupported: 'Voice no support this browser. Type am.',
+    howMuch: (recipient) => `How much you wan send give ${recipient}?`,
+    whoToSend: (amount) => `Who you wan send ₦${amount.toLocaleString()} give?`,
+    whoToAirtime: (amount) => `Who you wan buy ₦${amount.toLocaleString()} airtime for?`,
+    whoToData: (amount) => `Who you wan buy ₦${amount.toLocaleString()} data for?`,
+    confirmSend: (amount, recipient) => `You wan send ₦${amount.toLocaleString()} give ${recipient}?`,
+    confirmAirtime: (amount, recipient) => `You wan buy ₦${amount.toLocaleString()} airtime for ${recipient}?`,
+    confirmData: (amount, recipient) => `You wan buy ₦${amount.toLocaleString()} data for ${recipient}?`,
+    firstTimeAcc: (recipient) => `Na first time for ${recipient}. Wetin be the account number?`,
+    firstTimePhone: (recipient) => `Na first time for ${recipient}. Wetin be the phone number?`,
+    saved: (amount, recipient) => `I don save ${recipient}. You wan send ₦${amount.toLocaleString()} give ${recipient}?`,
+    didNotCatch: 'Abeg, I no understand. Talk am again clear.',
+    typeField: (field) => `Abeg, I no catch am. Type the ${field}.`,
+    verifying: 'I dey check voice and make Opay link...',
+    voiceFailed: 'I no recognize your voice. Access deny.',
+    duressSuccess: 'Transfer don work!',
+    openingOpay: (amount, recipient) => `I dey open Opay. Amount ₦${amount.toLocaleString()} give ${recipient} don lock. Just enter your PIN.`,
+    opayFailed: 'Abeg, I no fit create payment link',
+    tapToStart: 'Tap mic make we start'
   }
 };
 
@@ -874,23 +900,32 @@ function loadVoicesFast() {
   }, 100);
 }
 
+// HARPS UPGRADE: Female voice forced on Windows + all browsers
 function speakFemale(text, lang = 'en-NG') {
   speechSynthesis.cancel();
   clearTimeout(window.speechTimeout);
   window.speechTimeout = setTimeout(() => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang;
+
     if (voicesLoaded && availableVoices.length > 0) {
-      let voice = availableVoices.find(v => v.lang === lang);
-      if (!voice) {
-        voice = availableVoices.find(v => v.name === 'Google UK English Female') ||
-                availableVoices.find(v => v.name === 'Samantha') ||
-                availableVoices.find(v =>!['Google US English', 'David', 'Male'].some(m => v.name.includes(m)));
-      }
+      // PRIORITY 1: Nigerian English female
+      let voice = availableVoices.find(v => v.lang === 'en-NG' && v.name.toLowerCase().includes('female'));
+      // PRIORITY 2: Microsoft Zira - Windows female voice
+      if (!voice) voice = availableVoices.find(v => v.name.toLowerCase().includes('zira'));
+      // PRIORITY 3: Google UK English Female - Android/Chrome
+      if (!voice) voice = availableVoices.find(v => v.name === 'Google UK English Female');
+      // PRIORITY 4: Samantha - iPhone/iPad female
+      if (!voice) voice = availableVoices.find(v => v.name === 'Samantha');
+      // PRIORITY 5: Any female voice
+      if (!voice) voice = availableVoices.find(v => v.name.toLowerCase().includes('female'));
+      // PRIORITY 6: Any English voice that's NOT male
+      if (!voice) voice = availableVoices.find(v => v.lang.startsWith('en') &&!v.name.toLowerCase().includes('male') &&!v.name.toLowerCase().includes('david'));
+
       if (voice) {
         utterance.voice = voice;
-        utterance.pitch = 1.3;
-        utterance.rate = 0.9;
+        utterance.pitch = 1.3; // Higher pitch = feminine
+        utterance.rate = 0.85;
       }
     }
     speechSynthesis.speak(utterance);
@@ -1156,7 +1191,6 @@ async function processTranscript(final) {
   detectedUserLang = detectLanguage(final);
 
   try {
-    // HARPS UPGRADE: Extract all entities from speech
     const amountMatch = final.match(/(\d+)(k|,\d{3}|\s*thousand|\s*naira|\s*dollar|\s*USD)?/i);
     if (amountMatch) {
       let num = parseInt(amountMatch[1].replace(/\D/g,''));
@@ -1211,7 +1245,7 @@ async function processTranscript(final) {
         type: conversationState.intent
       });
       const confirmText = conversationState.intent === 'airtime'
-       ? responses[detectedUserLang].confirmAirtime(conversationState.amount, conversationState.recipient)
+      ? responses[detectedUserLang].confirmAirtime(conversationState.amount, conversationState.recipient)
         : responses[detectedUserLang].confirmData(conversationState.amount, conversationState.recipient);
       status.innerText = confirmText;
       speakFemale(confirmText, detectedUserLang);
@@ -1220,7 +1254,6 @@ async function processTranscript(final) {
       return;
     }
 
-    // Use backend for complex parsing if needed
     if (!conversationState.amount ||!conversationState.recipient) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 4000);
